@@ -1,0 +1,963 @@
+{
+    "title": "Recording 2/22/2026 at 8:05:51 PM",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 995,
+            "height": 889,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "https://corp.delaware.gov/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://corp.delaware.gov/",
+                    "title": "Division of Corporations - State of Delaware -"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "#corpServices3 > div:nth-of-type(1) strong"
+                ],
+                [
+                    "xpath///*[@id=\"corpServices3\"]/div[1]/p/a/strong"
+                ],
+                [
+                    "pierce/#corpServices3 > div:nth-of-type(1) strong"
+                ]
+            ],
+            "offsetY": 12.169921875,
+            "offsetX": 114.33984375,
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/  I have read and understand the disclaimer."
+                ],
+                [
+                    "tr:nth-of-type(5) > td"
+                ],
+                [
+                    "xpath///*[@id=\"TableBody\"]/tbody/tr[2]/td[2]/table[3]/tbody/tr[5]/td"
+                ],
+                [
+                    "pierce/tr:nth-of-type(5) > td"
+                ],
+                [
+                    "text/I have read and"
+                ]
+            ],
+            "offsetY": 7.060546875,
+            "offsetX": 164.5
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/  I have read and understand the disclaimer.",
+                    "aria/[role=\"checkbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmDisclaimerChkBox"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmDisclaimerChkBox\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmDisclaimerChkBox"
+                ]
+            ],
+            "offsetY": 8.06640625,
+            "offsetX": 3.1875
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/-- Select One -- If you would like information about what kind of entity you should form, please click here.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityType"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityType\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityType"
+                ]
+            ],
+            "offsetY": 7.076171875,
+            "offsetX": 21.451171875
+        },
+        {
+            "type": "change",
+            "value": "C",
+            "selectors": [
+                [
+                    "aria/CORPORATION If you would like information about what kind of entity you should form, please click here.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityType"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityType\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityType"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/-- Select One -- If you would like information about what kind of entity you should form, please click here.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityType"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityType\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityType"
+                ]
+            ],
+            "offsetY": 4.076171875,
+            "offsetX": 49.451171875
+        },
+        {
+            "type": "change",
+            "value": "Y",
+            "selectors": [
+                [
+                    "aria/CORPORATION If you would like information about what kind of entity you should form, please click here.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityType"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityType\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityType"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/-- Select One --",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityEnding\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "text/-1"
+                ]
+            ],
+            "offsetY": 10.837890625,
+            "offsetX": 156.611328125
+        },
+        {
+            "type": "change",
+            "value": "L.L.C.",
+            "selectors": [
+                [
+                    "aria/L.L.C.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityEnding\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "text/-1"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/LIMITED LIABILITY COMPANY (LLC) If you would like information about what kind of entity you should form, please click here.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityType"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityType\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityType"
+                ]
+            ],
+            "offsetY": 11.076171875,
+            "offsetX": 130.451171875
+        },
+        {
+            "type": "change",
+            "value": "C",
+            "selectors": [
+                [
+                    "aria/CORPORATION If you would like information about what kind of entity you should form, please click here.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityType"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityType\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityType"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/-- Select One --",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityEnding\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "text/-1"
+                ]
+            ],
+            "offsetY": 2.837890625,
+            "offsetX": 101.986328125
+        },
+        {
+            "type": "change",
+            "value": "INC.",
+            "selectors": [
+                [
+                    "aria/INC.",
+                    "aria/[role=\"combobox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityEnding\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityEnding"
+                ],
+                [
+                    "text/-1"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/ This field is not case sensitive.",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityName"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityName\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityName"
+                ]
+            ],
+            "offsetY": 7.599609375,
+            "offsetX": 29.451171875
+        },
+        {
+            "type": "change",
+            "value": "ffff",
+            "selectors": [
+                [
+                    "aria/ This field is not case sensitive.",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityName"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityName\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityName"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/CAPTCHA ↻ 🔊 Type code from the image:   ",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ]
+            ],
+            "offsetY": 18.40234375,
+            "offsetX": 46.87109375
+        },
+        {
+            "type": "keyDown",
+            "target": "main",
+            "key": "Shift"
+        },
+        {
+            "type": "keyUp",
+            "key": "Shift",
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Frequently Asked Questions Every entity that is to be formed or incorporated in Delaware must be represented by a Registered Agent located in the State of Delaware. If you would like assistance in reserving a name we encourage you to contact a Delaware online agent or contact us. Name Availability Search CAPTCHA ↻ 🔊 Type code from the image:   The intent of this tool is to provide real-time entity name availability. The Division of Corporations strictly prohibits mining data. Excessive and repeated searches that may have a negative impact on our systems and customer experience are also prohibited. Use of automated tools in any form may result in the suspension of your access to utilize this service. Search"
+                ],
+                [
+                    "tr:nth-of-type(2) > td:nth-of-type(2)"
+                ],
+                [
+                    "xpath///*[@id=\"TableBody\"]/tbody/tr[2]/td[2]"
+                ],
+                [
+                    "pierce/tr:nth-of-type(2) > td:nth-of-type(2)"
+                ]
+            ],
+            "offsetY": 397.888671875,
+            "offsetX": 304.375
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "#ctl00_ContentPlaceHolder1_pnlCaptcha > div > div:nth-of-type(1) > div"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_pnlCaptcha\"]/div/div[1]/div"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_pnlCaptcha > div > div:nth-of-type(1) > div"
+                ]
+            ],
+            "offsetY": 5.40234375,
+            "offsetX": 396.50390625
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/🔊"
+                ],
+                [
+                    "#playCaptchaButton"
+                ],
+                [
+                    "xpath///*[@id=\"playCaptchaButton\"]"
+                ],
+                [
+                    "pierce/#playCaptchaButton"
+                ],
+                [
+                    "text/🔊"
+                ]
+            ],
+            "offsetY": 8.158203125,
+            "offsetX": 19.380859375
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/↻"
+                ],
+                [
+                    "#btnRefresh"
+                ],
+                [
+                    "xpath///*[@id=\"btnRefresh\"]"
+                ],
+                [
+                    "pierce/#btnRefresh"
+                ],
+                [
+                    "text/↻"
+                ]
+            ],
+            "offsetY": 15.142578125,
+            "offsetX": 14.380859375
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/🔊"
+                ],
+                [
+                    "#playCaptchaButton"
+                ],
+                [
+                    "xpath///*[@id=\"playCaptchaButton\"]"
+                ],
+                [
+                    "pierce/#playCaptchaButton"
+                ],
+                [
+                    "text/🔊"
+                ]
+            ],
+            "offsetY": 13.158203125,
+            "offsetX": 15.380859375
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/CAPTCHA ↻ 🔊 Type code from the image:   ",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ]
+            ],
+            "offsetY": 17.40234375,
+            "offsetX": 86.87109375
+        },
+        {
+            "type": "change",
+            "value": "HDLUD",
+            "selectors": [
+                [
+                    "aria/CAPTCHA ↻ 🔊 Type code from the image:   ",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Search"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_btnSubmit"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_btnSubmit\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_btnSubmit"
+                ]
+            ],
+            "offsetY": 2.056640625,
+            "offsetX": 28.1484375,
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "tr:nth-of-type(8)"
+                ],
+                [
+                    "xpath///*[@id=\"TableBody\"]/tbody/tr[2]/td[2]/table[3]/tbody/tr[8]"
+                ],
+                [
+                    "pierce/tr:nth-of-type(8)"
+                ]
+            ],
+            "offsetY": 14.595703125,
+            "offsetX": 129.5
+        },
+        {
+            "type": "change",
+            "value": "this corpor",
+            "selectors": [
+                [
+                    "aria/ffff This field is not case sensitive.",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_frmEntityName"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_frmEntityName\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_frmEntityName"
+                ],
+                [
+                    "text/ffff"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Search"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_btnSubmit"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_btnSubmit\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_btnSubmit"
+                ]
+            ],
+            "offsetY": 8.056640625,
+            "offsetX": 51.1484375,
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/CAPTCHA ↻ 🔊 Type code from the image:   ",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ]
+            ],
+            "offsetY": 1.40234375,
+            "offsetX": 54.87109375
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/CAPTCHA ↻ 🔊 Type code from the image:   ",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ]
+            ],
+            "offsetY": 16.40234375,
+            "offsetX": 51.87109375
+        },
+        {
+            "type": "change",
+            "value": "IYGS7",
+            "selectors": [
+                [
+                    "aria/CAPTCHA ↻ 🔊 Type code from the image:   ",
+                    "aria/[role=\"textbox\"]"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_ecorpCaptcha1_txtCaptcha"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "keyDown",
+            "target": "main",
+            "key": "Enter",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "keyUp",
+            "key": "Enter",
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/No, Perform New search"
+                ],
+                [
+                    "#ctl00_ContentPlaceHolder1_btnNo"
+                ],
+                [
+                    "xpath///*[@id=\"ctl00_ContentPlaceHolder1_btnNo\"]"
+                ],
+                [
+                    "pierce/#ctl00_ContentPlaceHolder1_btnNo"
+                ],
+                [
+                    "text/No, Perform New"
+                ]
+            ],
+            "offsetY": 11.056640625,
+            "offsetX": 53.400390625
+        },
+        {
+            "type": "navigate",
+            "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/Ecorp/NameReserv/NameReservation.aspx",
+                    "title": "Division of Corporations - Filing"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://corp.delaware.gov/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://corp.delaware.gov/",
+                    "title": "Division of Corporations - State of Delaware -"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "#corpServices5 > div:nth-of-type(1) strong"
+                ],
+                [
+                    "xpath///*[@id=\"corpServices5\"]/div[1]/p/a/strong"
+                ],
+                [
+                    "pierce/#corpServices5 > div:nth-of-type(1) strong"
+                ]
+            ],
+            "offsetY": 12.447265625,
+            "offsetX": 170.5,
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://corp.delaware.gov/howtoform/",
+                    "title": "How to Form a New Business Entity - Division of Corporations - State of Delaware"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "html"
+                ],
+                [
+                    "xpath//html"
+                ],
+                [
+                    "pierce/html"
+                ]
+            ],
+            "offsetY": 2349.75,
+            "offsetX": 672,
+            "duration": 529.7000000476837
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "#readSpeak_test li:nth-of-type(8)"
+                ],
+                [
+                    "xpath///*[@id=\"main_content\"]/div/ol/li[8]"
+                ],
+                [
+                    "pierce/#readSpeak_test li:nth-of-type(8)"
+                ]
+            ],
+            "offsetY": 197.345703125,
+            "offsetX": 405.5
+        },
+        {
+            "type": "navigate",
+            "url": "https://corp.delaware.gov/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://corp.delaware.gov/",
+                    "title": "Division of Corporations - State of Delaware -"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Division of Corporations Navigation",
+                    "aria/Document Filing and Certificate Request Service"
+                ],
+                [
+                    "#menu-item-7456 > a"
+                ],
+                [
+                    "xpath///*[@id=\"menu-item-7456\"]/a"
+                ],
+                [
+                    "pierce/#menu-item-7456 > a"
+                ]
+            ],
+            "offsetY": 29.8671875,
+            "offsetX": 94.5,
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://corp.delaware.gov/document-upload-service-information/",
+                    "title": "Document Filing and Certificate Request Information - Division of Corporations - State of Delaware"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/click here"
+                ],
+                [
+                    "p:nth-of-type(8) a"
+                ],
+                [
+                    "xpath///*[@id=\"main_content\"]/div/p[8]/span/strong/a"
+                ],
+                [
+                    "pierce/p:nth-of-type(8) a"
+                ],
+                [
+                    "text/click here"
+                ]
+            ],
+            "offsetY": 13.16796875,
+            "offsetX": 47.03515625
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Document Filing and Certificate Request"
+                ],
+                [
+                    "div:nth-of-type(4) div > div > div:nth-of-type(1) h3"
+                ],
+                [
+                    "xpath///*[@id=\"service\"]/div/div/div[1]/a/div[2]/h3"
+                ],
+                [
+                    "pierce/div:nth-of-type(4) div > div > div:nth-of-type(1) h3"
+                ]
+            ],
+            "offsetY": 100.740234375,
+            "offsetX": 134.5
+        },
+        {
+            "type": "navigate",
+            "url": "https://icis.corp.delaware.gov/ecorp2/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/ecorp2/",
+                    "title": "Division of Corporations - Delaware - Home"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Document Filing and Certificate Request"
+                ],
+                [
+                    "div:nth-of-type(4) div > div > div:nth-of-type(1) h3"
+                ],
+                [
+                    "xpath///*[@id=\"service\"]/div/div/div[1]/a/div[2]/h3"
+                ],
+                [
+                    "pierce/div:nth-of-type(4) div > div > div:nth-of-type(1) h3"
+                ]
+            ],
+            "offsetY": 66.740234375,
+            "offsetX": 121.5
+        },
+        {
+            "type": "navigate",
+            "url": "https://icis.corp.delaware.gov/ecorp2/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://icis.corp.delaware.gov/ecorp2/",
+                    "title": "Division of Corporations - Delaware - Home"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sfp-formation-mcp"
+version = "0.1.0"
+description = "MCP tool server for SFP AI Agent Entity Formation"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+authors = [
+    {name = "Strategic Fund Partners"},
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
