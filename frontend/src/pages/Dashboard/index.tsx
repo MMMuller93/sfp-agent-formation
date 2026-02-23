@@ -10,7 +10,7 @@ import {
   Plus,
   ArrowRight,
 } from "lucide-react";
-import { api, type EntityOrder } from "@/lib/api";
+import { api, type OrderSummary } from "@/lib/api";
 
 /* ─── State configuration ───────────────────────────────────── */
 
@@ -154,10 +154,10 @@ function OrderCard({
   order,
   index,
 }: {
-  order: EntityOrder;
+  order: OrderSummary;
   index: number;
 }) {
-  const state = getStateDisplay(order.status);
+  const state = getStateDisplay(order.state);
   const StateIcon = state.icon;
   const createdDate = new Date(order.created_at).toLocaleDateString(
     "en-US",
@@ -181,7 +181,7 @@ function OrderCard({
         {/* Entity name */}
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-stone-100 group-hover:text-bronze-200 transition-colors">
-            {order.entity_name}
+            {order.requested_name}
           </h3>
           <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-stone-700 transition-all duration-200 group-hover:text-bronze-500 group-hover:translate-x-0.5" />
         </div>
@@ -209,7 +209,7 @@ function OrderCard({
 /* ─── Dashboard page ────────────────────────────────────────── */
 
 export function Dashboard() {
-  const [orders, setOrders] = useState<EntityOrder[]>([]);
+  const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -220,7 +220,7 @@ export function Dashboard() {
       try {
         const data = await api.orders.list();
         if (!cancelled) {
-          setOrders(data);
+          setOrders(data.orders);
         }
       } catch (err: unknown) {
         if (!cancelled) {

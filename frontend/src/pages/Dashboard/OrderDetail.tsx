@@ -12,7 +12,7 @@ import {
   Download,
   ChevronRight,
 } from "lucide-react";
-import { api, type EntityOrder } from "@/lib/api";
+import { api, type OrderResponse } from "@/lib/api";
 
 /* ─── State machine + display ───────────────────────────────── */
 
@@ -160,10 +160,10 @@ interface NextAction {
   href: string;
 }
 
-function getNextActions(order: EntityOrder): NextAction[] {
+function getNextActions(order: OrderResponse): NextAction[] {
   const actions: NextAction[] = [];
 
-  switch (order.status) {
+  switch (order.state) {
     case "draft":
       actions.push({
         title: "Complete Intake",
@@ -190,6 +190,7 @@ function getNextActions(order: EntityOrder): NextAction[] {
         actionLabel: "Start Verification",
         href: `/kernel/${order.id}`,
       });
+      break;
       break;
     case "active":
       actions.push({
@@ -357,7 +358,7 @@ function ProgressTimeline({ currentStatus }: { currentStatus: string }) {
 
 /* ─── Next actions card ─────────────────────────────────────── */
 
-function NextActionsCard({ order }: { order: EntityOrder }) {
+function NextActionsCard({ order }: { order: OrderResponse }) {
   const actions = getNextActions(order);
 
   if (actions.length === 0) {
@@ -481,7 +482,7 @@ function DocumentsCard({ status }: { status: string }) {
 
 export function OrderDetail() {
   const { orderId } = useParams<{ orderId: string }>();
-  const [order, setOrder] = useState<EntityOrder | null>(null);
+  const [order, setOrder] = useState<OrderResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -548,7 +549,7 @@ export function OrderDetail() {
     );
   }
 
-  const stateDisplay = getStateDisplay(order.status);
+  const stateDisplay = getStateDisplay(order.state);
   const StateIcon = stateDisplay.icon;
   const createdDate = new Date(order.created_at).toLocaleDateString(
     "en-US",
@@ -592,7 +593,7 @@ export function OrderDetail() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="heading-display text-3xl text-stone-100">
-                {order.entity_name}
+                {order.requested_name}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <span className="rounded-md bg-stone-800/60 px-2.5 py-1 text-xs font-medium text-stone-400">
@@ -607,9 +608,9 @@ export function OrderDetail() {
             {/* State badge */}
             <div
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium ${stateDisplay.color} ${
-                order.status === "active"
+                order.state === "active"
                   ? "border-emerald-500/30 bg-emerald-500/5"
-                  : order.status === "failed"
+                  : order.state === "failed"
                     ? "border-red-500/30 bg-red-500/5"
                     : "border-stone-700 bg-stone-900/60"
               }`}
@@ -624,13 +625,13 @@ export function OrderDetail() {
         <div className="mt-10 grid gap-6 lg:grid-cols-5">
           {/* Timeline — takes 2 columns */}
           <div className="lg:col-span-2">
-            <ProgressTimeline currentStatus={order.status} />
+            <ProgressTimeline currentStatus={order.state} />
           </div>
 
           {/* Right column — takes 3 columns */}
           <div className="space-y-6 lg:col-span-3">
             <NextActionsCard order={order} />
-            <DocumentsCard status={order.status} />
+            <DocumentsCard status={order.state} />
           </div>
         </div>
       </div>

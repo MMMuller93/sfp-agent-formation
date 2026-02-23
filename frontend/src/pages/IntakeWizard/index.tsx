@@ -790,13 +790,25 @@ export function IntakeWizard() {
 
     try {
       const order = await api.orders.create({
-        entity_name: form.requested_name,
+        requested_name: form.requested_name,
         jurisdiction: form.jurisdiction as "DE" | "WY",
-        beneficial_owners: form.members.map((m) => ({
-          name: m.legal_name,
-          address: "", // Address collected later in Human Kernel step
-          ownership_pct: m.ownership_percentage,
+        vehicle_type: form.vehicle_type as "llc" | "dao_llc" | "corporation",
+        members: form.members.map((m) => ({
+          legal_name: m.legal_name,
+          email: m.email || null,
+          role: m.role as "member" | "manager" | "registered_agent" | "responsible_party",
+          ownership_percentage: m.ownership_percentage,
         })),
+        agent: form.agent.enabled
+          ? {
+              display_name: form.agent.display_name,
+              authority_scope: form.agent.authority_scope,
+              transaction_limit_cents:
+                form.agent.transaction_limit_cents > 0
+                  ? form.agent.transaction_limit_cents
+                  : null,
+            }
+          : null,
       });
 
       navigate(`/dashboard/${order.id}`);

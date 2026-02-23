@@ -19,7 +19,6 @@ from typing import Any
 
 import httpx
 from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -37,7 +36,7 @@ def _client() -> httpx.AsyncClient:
     """Build an async HTTP client pointed at the SFP Formation API."""
     headers: dict[str, str] = {"Content-Type": "application/json"}
     if API_KEY:
-        headers["Authorization"] = f"Bearer {API_KEY}"
+        headers["X-API-Key"] = API_KEY
     return httpx.AsyncClient(
         base_url=API_BASE_URL,
         headers=headers,
@@ -61,7 +60,9 @@ mcp = FastMCP(
     "SFP Entity Formation",
     description=(
         "AI-agent-native legal entity formation service. "
-        "Form LLCs, DAOs, corps, and trusts across US jurisdictions."
+        "Form Delaware LLCs, Wyoming DAO LLCs, and other entity types "
+        "on behalf of human owners. The agent handles the workflow; "
+        "humans are only involved for SSN collection, KYC, and payment."
     ),
 )
 
@@ -70,38 +71,47 @@ mcp = FastMCP(
 # ---------------------------------------------------------------------------
 
 
-class CreateEntityOrderParams(BaseModel):
-    jurisdiction: str = Field(description="Two-letter state code (e.g. DE, WY, NV)")
-    vehicle_type: str = Field(description="Entity type: LLC, DAO_LLC, C_CORP, S_CORP, LP, STATUTORY_TRUST, SERIES_LLC")
-    entity_name: str = Field(description="Desired entity name including suffix (e.g. 'Acme Holdings LLC')")
-    member_name: str = Field(description="Full legal name of the organizing member")
-    member_email: str = Field(description="Email address for the organizing member")
-
-
 @mcp.tool()
 async def create_entity_order(
     jurisdiction: str,
     vehicle_type: str,
-    entity_name: str,
+    requested_name: str,
     member_name: str,
     member_email: str,
+    service_tier: str = "self_serve",
 ) -> dict[str, Any]:
     """Create a new entity formation order.
 
-    Initiates the formation process for a legal entity in the specified
-    jurisdiction. The order enters the 'draft' state and progresses through
-    compliance review, document generation, and state filing.
+    Initiates the formation process for a legal entity. The order enters
+    'draft' state and the response includes `next_required_actions` telling
+    you exactly what to do next.
 
-    Returns the created order with its ID, current state, and next steps.
+    Args:
+        jurisdiction: Two-letter state code (DE or WY for MVP).
+        vehicle_type: Entity type — one of: llc, dao_llc, corporation.
+        requested_name: Desired entity name including suffix (e.g. 'Acme Holdings LLC').
+        member_name: Full legal name of the organizing member.
+        member_email: Email address for the organizing member.
+        service_tier: One of: self_serve (default), managed, autonomous.
+
+    Returns:
+        The created order with ID, state, pricing, and next_required_actions.
     """
-    payload = CreateEntityOrderParams(
-        jurisdiction=jurisdiction,
-        vehicle_type=vehicle_type,
-        entity_name=entity_name,
-        member_name=member_name,
-        member_email=member_email,
-    )
-    return await _api_request("POST", "/v1/entity-orders", json=payload.model_dump())
+    payload = {
+        "jurisdiction": jurisdiction,
+        "vehicle_type": vehicle_type,
+        "requested_name": requested_name,
+        "service_tier": service_tier,
+        "members": [
+            {
+                "legal_name": member_name,
+                "email": member_email,
+                "role": "member",
+                "ownership_percentage": 100,
+            }
+        ],
+    }
+    return await _api_request("POST", "/v1/entity-orders", json=payload)
 
 
 # ---------------------------------------------------------------------------
@@ -111,22 +121,21 @@ async def create_entity_order(
 
 @mcp.tool()
 async def check_name_availability(
-    jurisdiction: str,
-    entity_name: str,
+    order_id: str,
 ) -> dict[str, Any]:
-    """Check whether an entity name is available in a jurisdiction.
+    """Check whether the entity name on an order is available in its jurisdiction.
 
-    Queries the state's business name registry (via API or automated portal
-    check) to determine if the proposed name is available for registration.
+    Runs the name through the state's business name registry. If unavailable,
+    the order transitions to name_check_failed and you should update the name
+    and retry.
 
-    Returns availability status, any conflicts found, and suggested
-    alternatives if the name is taken.
+    Args:
+        order_id: UUID of the entity order.
+
+    Returns:
+        State transition result with new_state indicating pass or fail.
     """
-    return await _api_request(
-        "POST",
-        "/v1/name-check",
-        json={"jurisdiction": jurisdiction, "entity_name": entity_name},
-    )
+    return await _api_request("POST", f"/v1/entity-orders/{order_id}/name-check")
 
 
 # ---------------------------------------------------------------------------
@@ -140,9 +149,15 @@ async def get_entity_status(
 ) -> dict[str, Any]:
     """Get the current status of an entity formation order.
 
-    Returns the full order details including current state, timeline of
-    state transitions, generated documents, filing status, and any
-    action items that require attention.
+    Returns the full order details including current state, pricing,
+    and next_required_actions — which tells you exactly what the agent
+    or human should do next.
+
+    Args:
+        order_id: UUID of the entity order.
+
+    Returns:
+        Full order with state, actions, and metadata.
     """
     return await _api_request("GET", f"/v1/entity-orders/{order_id}")
 
@@ -156,16 +171,25 @@ async def get_entity_status(
 async def start_human_kernel(
     order_id: str,
 ) -> dict[str, Any]:
-    """Initiate a human-in-the-loop review for an entity order.
+    """Create a secure human verification session for an entity order.
 
-    Triggers a human kernel session for tasks that require manual
-    intervention, such as CAPTCHA solving during state portal filing,
-    compliance review of flagged orders, or document verification.
+    Generates a time-limited (24h) secure URL that the human owner must
+    visit to complete: SSN/ITIN collection, identity verification (KYC),
+    document signing, and compliance attestations.
 
-    Returns the kernel session ID and a webhook URL for receiving
-    the human operator's response.
+    The agent should relay the returned kernel_url to the human owner
+    along with the suggested_message. When the human completes all steps,
+    a webhook fires and the order automatically advances.
+
+    Args:
+        order_id: UUID of the entity order.
+
+    Returns:
+        Session with kernel_url, expires_at, and suggested_message for the human.
     """
-    return await _api_request("POST", f"/v1/entity-orders/{order_id}/human-kernel")
+    return await _api_request(
+        "POST", f"/v1/entity-orders/{order_id}/human-kernel"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -177,11 +201,123 @@ async def start_human_kernel(
 async def list_available_vehicles() -> dict[str, Any]:
     """List all entity vehicle types available for formation.
 
-    Returns the supported entity types (LLC, DAO LLC, C-Corp, etc.)
-    grouped by jurisdiction, including formation fees, typical
-    processing times, and any jurisdiction-specific requirements.
+    Returns the supported entity types grouped by jurisdiction,
+    including pricing and requirements.
+
+    No arguments required.
+
+    Returns:
+        Dict with jurisdictions, vehicle types, pricing, and requirements.
     """
-    return await _api_request("GET", "/v1/vehicles")
+    # This is a static response — no backend call needed.
+    # Matches the PRICING dict in entity_order_service.py.
+    return {
+        "jurisdictions": {
+            "DE": {
+                "name": "Delaware",
+                "vehicles": [
+                    {
+                        "type": "llc",
+                        "name": "Delaware LLC",
+                        "pricing_cents": 29900,
+                        "typical_timeline": "3-5 business days",
+                        "requirements": [
+                            "At least one member",
+                            "Registered agent (included)",
+                            "SSN/ITIN for responsible party",
+                        ],
+                    },
+                    {
+                        "type": "corporation",
+                        "name": "Delaware Corporation",
+                        "pricing_cents": 49900,
+                        "typical_timeline": "5-7 business days",
+                        "requirements": [
+                            "At least one director",
+                            "Registered agent (included)",
+                            "SSN/ITIN for responsible party",
+                        ],
+                    },
+                ],
+            },
+            "WY": {
+                "name": "Wyoming",
+                "vehicles": [
+                    {
+                        "type": "llc",
+                        "name": "Wyoming LLC",
+                        "pricing_cents": 29900,
+                        "typical_timeline": "3-5 business days",
+                        "requirements": [
+                            "At least one member",
+                            "Registered agent (included)",
+                        ],
+                    },
+                    {
+                        "type": "dao_llc",
+                        "name": "Wyoming DAO LLC",
+                        "pricing_cents": 49900,
+                        "typical_timeline": "5-10 business days",
+                        "requirements": [
+                            "At least one member",
+                            "Smart contract address (optional at filing)",
+                            "Registered agent (included)",
+                        ],
+                    },
+                ],
+            },
+        },
+        "service_tiers": [
+            {
+                "tier": "self_serve",
+                "name": "Self-Serve",
+                "description": "Developer is member + responsible party",
+                "available": True,
+            },
+            {
+                "tier": "managed",
+                "name": "Managed",
+                "description": "SFP principal is managing member + responsible party",
+                "available": False,
+                "note": "Coming in V2",
+            },
+            {
+                "tier": "autonomous",
+                "name": "Autonomous",
+                "description": "CSP provides all human roles (Cayman Foundation)",
+                "available": False,
+                "note": "Coming in V3",
+            },
+        ],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tool: update_entity_name
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def update_entity_name(
+    order_id: str,
+    new_name: str,
+) -> dict[str, Any]:
+    """Update the requested entity name on an order.
+
+    Use this after a name check fails to try a different name.
+
+    Args:
+        order_id: UUID of the entity order.
+        new_name: New desired entity name including suffix.
+
+    Returns:
+        Updated order with the new name.
+    """
+    return await _api_request(
+        "PATCH",
+        f"/v1/entity-orders/{order_id}",
+        json={"requested_name": new_name},
+    )
 
 
 # ---------------------------------------------------------------------------

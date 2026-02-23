@@ -4,6 +4,8 @@ import { Landing } from "@/pages/Landing";
 import { IntakeWizard } from "@/pages/IntakeWizard";
 import { Dashboard } from "@/pages/Dashboard";
 import { OrderDetail } from "@/pages/Dashboard/OrderDetail";
+import { HumanKernel } from "@/pages/HumanKernel";
+import { OpsConsole } from "@/pages/OpsConsole";
 
 // Lightweight placeholder pages for routes that haven't been built yet.
 function Placeholder({ title }: { title: string }) {
@@ -25,14 +27,8 @@ export function App() {
         <Route path="start" element={<IntakeWizard />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="dashboard/:orderId" element={<OrderDetail />} />
-        <Route
-          path="kernel/:token"
-          element={<Placeholder title="Human Kernel" />}
-        />
-        <Route
-          path="ops"
-          element={<Placeholder title="Ops Console" />}
-        />
+        <Route path="kernel/:token" element={<HumanKernel />} />
+        <Route path="ops" element={<OpsConsole />} />
         <Route
           path="docs"
           element={<Placeholder title="API Documentation" />}
