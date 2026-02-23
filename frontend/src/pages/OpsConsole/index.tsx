@@ -368,54 +368,121 @@ function SkeletonRow() {
   );
 }
 
-// ---------- Audit log tab (stub) ----------
+// ---------- Audit log tab ----------
 
-interface AuditEvent {
+interface AuditLogEntry {
   id: string;
-  timestamp: string;
   order_id: string;
-  event: string;
-  detail: string;
+  order_name: string;
+  actor: string;
+  action: string;
+  details: Record<string, unknown> | null;
+  created_at: string;
 }
 
-function AuditLog() {
-  // Audit events are not yet exposed by the API; show a placeholder.
-  const MOCK_EVENTS: AuditEvent[] = [
-    {
-      id: "1",
-      timestamp: new Date(Date.now() - 120000).toISOString(),
-      order_id: "a1b2c3d4",
-      event: "state.changed",
-      detail: "docs_generated → state_filing_submitted",
-    },
-    {
-      id: "2",
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      order_id: "e5f6g7h8",
-      event: "state.changed",
-      detail: "state_confirmed → ein_pending",
-    },
-    {
-      id: "3",
-      timestamp: new Date(Date.now() - 600000).toISOString(),
-      order_id: "i9j0k1l2",
-      event: "order.created",
-      detail: 'New order "Meridian Holdings LLC" (DE/LLC)',
-    },
-  ];
+function AuditLog({ orders }: { orders: OrderSummary[] }) {
+  const [events, setEvents] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Only fetch on mount or manual refresh — NOT on every orders change
+  const orderIds = orders.map((o) => o.id).sort().join(",");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchAuditEvents() {
+      setLoading(true);
+      const recentOrders = orders.slice(0, 10);
+      if (recentOrders.length === 0) {
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
+      const orderMap = new Map(recentOrders.map((o) => [o.id, o]));
+      const allEvents: AuditLogEntry[] = [];
+
+      await Promise.allSettled(
+        recentOrders.map(async (order) => {
+          try {
+            const trail = await api.orders.getAuditTrail(order.id, 10);
+            for (const ev of trail) {
+              allEvents.push({
+                id: ev.id,
+                order_id: order.id,
+                order_name: orderMap.get(order.id)?.requested_name ?? order.id.slice(0, 8),
+                actor: ev.actor,
+                action: ev.action,
+                details: ev.details,
+                created_at: ev.created_at,
+              });
+            }
+          } catch {
+            // Order audit trail unavailable — skip silently
+          }
+        }),
+      );
+
+      allEvents.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+
+      if (!cancelled) {
+        setEvents(allEvents.slice(0, 50));
+        setLoading(false);
+      }
+    }
+
+    void fetchAuditEvents();
+    return () => { cancelled = true; };
+    // Depend on stable order ID set + manual refresh key — not the orders array reference
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderIds, refreshKey]);
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-stone-800/60 bg-stone-900/40 p-8">
+        <div className="flex items-center gap-3 text-stone-500">
+          <RefreshCw className="h-4 w-4 animate-spin" strokeWidth={1.5} />
+          <span className="text-sm">Loading audit events...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <div className="rounded-xl border border-stone-800/60 bg-stone-900/40 p-12 text-center">
+        <Activity className="mx-auto h-8 w-8 text-stone-700" strokeWidth={1.5} />
+        <p className="mt-3 text-sm text-stone-500">No audit events yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-stone-800/60 bg-stone-900/40">
-      <div className="border-b border-stone-800/60 px-6 py-4">
-        <h2 className="text-sm font-semibold text-stone-200">
-          Recent Audit Events
-        </h2>
-        <p className="mt-0.5 text-xs text-stone-500">
-          Live audit stream not yet connected — showing mock data.
-        </p>
+      <div className="flex items-center justify-between border-b border-stone-800/60 px-6 py-4">
+        <div>
+          <h2 className="text-sm font-semibold text-stone-200">
+            Recent Audit Events
+          </h2>
+          <p className="mt-0.5 text-xs text-stone-500">
+            Showing {events.length} events across {orders.slice(0, 10).length} recent orders.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setRefreshKey((k) => k + 1)}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 rounded-md border border-stone-700/60 bg-stone-900/60 px-3 py-1.5 text-xs text-stone-400 transition-all hover:border-stone-600 hover:text-stone-200 disabled:opacity-40"
+        >
+          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} strokeWidth={1.5} />
+          Refresh
+        </button>
       </div>
       <div className="divide-y divide-stone-800/40">
-        {MOCK_EVENTS.map((ev) => (
+        {events.map((ev) => (
           <div key={ev.id} className="flex items-start gap-4 px-6 py-4">
             <div className="mt-0.5 flex-shrink-0">
               <Activity
@@ -426,18 +493,19 @@ function AuditLog() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold text-stone-300">
-                  {ev.event}
+                  {ev.action}
                 </span>
                 <span className="rounded bg-stone-800/60 px-1.5 py-0.5 font-mono text-[10px] text-stone-500">
-                  {ev.order_id}
+                  {ev.order_name}
                 </span>
               </div>
               <p className="mt-0.5 truncate text-xs text-stone-500">
-                {ev.detail}
+                {ev.actor}
+                {ev.details ? ` — ${JSON.stringify(ev.details).slice(0, 80)}` : ""}
               </p>
             </div>
             <time className="flex-shrink-0 text-[10px] text-stone-600">
-              {new Date(ev.timestamp).toLocaleTimeString("en-US", {
+              {new Date(ev.created_at).toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
@@ -619,7 +687,7 @@ export function OpsConsole() {
               onActionSuccess={handleActionSuccess}
             />
           )}
-          {activeTab === "audit" && <AuditLog />}
+          {activeTab === "audit" && <AuditLog orders={orders} />}
         </div>
       </div>
     </section>

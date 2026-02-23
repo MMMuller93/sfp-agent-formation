@@ -12,9 +12,11 @@ from __future__ import annotations
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
+from app.config import get_settings
+
 router = APIRouter(tags=["discovery"])
 
-LLMS_TXT_CONTENT = """\
+LLMS_TXT_TEMPLATE = """\
 # SFP Entity Formation API
 
 > Agent-native legal entity formation. Form a Delaware LLC or Wyoming DAO LLC
@@ -30,7 +32,7 @@ by banks), document signing, and payment approval.
 
 ## Base URL
 
-https://formation.strategicfundpartners.com
+{base_url}
 
 ## Authentication
 
@@ -44,42 +46,47 @@ Human kernel routes use token-based auth (no API key needed).
 ### Entity Formation
 - POST /v1/entity-orders — Create a new entity formation order
 - GET  /v1/entity-orders — List orders (paginated, filterable)
-- GET  /v1/entity-orders/{id} — Get order status + next_required_actions
-- PATCH /v1/entity-orders/{id} — Update entity name (pre-filing only)
+- GET  /v1/entity-orders/{{id}} — Get order status + next_required_actions
+- PATCH /v1/entity-orders/{{id}} — Update entity name (pre-filing only)
 
 ### Intake & Name Check
-- POST /v1/entity-orders/{id}/intake — Complete intake (draft -> intake_complete)
-- POST /v1/entity-orders/{id}/name-check — Check name availability in jurisdiction
+- POST /v1/entity-orders/{{id}}/intake — Complete intake (draft -> intake_complete)
+- POST /v1/entity-orders/{{id}}/name-check — Check name availability in jurisdiction
 
 ### Payment
-- POST /v1/entity-orders/{id}/payment — Record payment (Stripe integration)
+- POST /v1/entity-orders/{{id}}/payment — Record payment (Stripe integration)
 
 ### Human Kernel (Owner Verification)
-- POST /v1/entity-orders/{id}/human-kernel — Create secure session for owner
+- POST /v1/entity-orders/{{id}}/human-kernel — Create secure session for owner
   Returns a kernel_url the agent relays to the human owner.
 
 ### Human Kernel (Owner-Facing, Token Auth)
-- GET  /v1/human/secure/{token} — Get session status
-- POST /v1/human/secure/{token}/submit — Complete a verification step
-- GET  /v1/human/secure/{token}/status — Check completion
+- GET  /v1/human/secure/{{token}} — Get session status
+- POST /v1/human/secure/{{token}}/submit — Complete a verification step
+- GET  /v1/human/secure/{{token}}/status — Check completion
+
+**SECURITY NOTE:** Kernel tokens are sensitive one-time credentials.
+Agents MUST NOT log, store, or cache kernel tokens. Treat them like
+passwords — relay to the human owner and discard. Tokens expire after
+24 hours and are single-use per step.
 
 ### Documents
-- POST /v1/entity-orders/{id}/documents/generate — Generate formation documents
-- GET  /v1/entity-orders/{id}/documents — List generated documents
+- POST /v1/entity-orders/{{id}}/documents/generate — Generate formation documents
+- GET  /v1/entity-orders/{{id}}/documents — List generated documents
 
 ### Filing & Post-Formation (Ops)
-- POST /v1/entity-orders/{id}/filing — Submit state filing
-- POST /v1/entity-orders/{id}/filing/confirm — Confirm filing accepted
-- POST /v1/entity-orders/{id}/ein — Start EIN application
-- POST /v1/entity-orders/{id}/ein/issue — Record EIN issuance
-- POST /v1/entity-orders/{id}/bank-pack — Generate bank pack
-- POST /v1/entity-orders/{id}/activate — Mark entity active
+- POST /v1/entity-orders/{{id}}/filing — Submit state filing
+- POST /v1/entity-orders/{{id}}/filing/confirm — Confirm filing accepted
+- POST /v1/entity-orders/{{id}}/ein — Start EIN application
+- POST /v1/entity-orders/{{id}}/ein/issue — Record EIN issuance
+- POST /v1/entity-orders/{{id}}/bank-pack — Generate bank pack
+- POST /v1/entity-orders/{{id}}/activate — Mark entity active
 
 ### Audit
-- GET /v1/entity-orders/{id}/audit — Get audit trail for an order
+- GET /v1/entity-orders/{{id}}/audit — Get audit trail for an order
 
 ### Webhooks
-- POST /v1/webhooks — Register a webhook for status updates
+- POST /v1/webhooks — Register a webhook for status updates (requires API key)
 
 ### Discovery
 - GET /llms.txt — This file
@@ -98,34 +105,34 @@ Human kernel routes use token-based auth (no API key needed).
 1. Agent calls POST /v1/entity-orders with jurisdiction, vehicle_type,
    requested_name, and members array
 2. API returns order with state="draft" and next_required_actions
-3. Agent calls POST /v1/entity-orders/{id}/intake to finalize details
-4. Agent calls POST /v1/entity-orders/{id}/name-check
+3. Agent calls POST /v1/entity-orders/{{id}}/intake to finalize details
+4. Agent calls POST /v1/entity-orders/{{id}}/name-check
 5. If name available -> state transitions to name_check_passed
 6. If not available -> name_check_failed with suggestions; agent can
    PATCH the name and retry
 7. Payment is collected (Stripe)
-8. Agent calls POST /v1/entity-orders/{id}/human-kernel
+8. Agent calls POST /v1/entity-orders/{{id}}/human-kernel
 9. API returns kernel_url — agent relays this to the human owner
 10. Human completes: SSN entry, KYC, document signing, attestation (~5 min)
 11. Webhook fires on completion; order transitions to human_kernel_completed
-12. Agent or ops calls POST /v1/entity-orders/{id}/documents/generate
+12. Agent or ops calls POST /v1/entity-orders/{{id}}/documents/generate
 13. SFP ops submits filing, confirms, applies for EIN
 14. EIN issued -> bank pack generated -> entity activated
 15. Final webhook: state = "active"
 
 ## Key Design: next_required_actions
 
-Every GET /v1/entity-orders/{id} response includes a next_required_actions
+Every GET /v1/entity-orders/{{id}} response includes a next_required_actions
 array telling the agent exactly what to do next. The agent never has to
 guess — just follow the actions.
 
 Example:
-  {
+  {{
     "action": "create_human_kernel",
-    "endpoint": "POST /v1/entity-orders/{id}/human-kernel",
+    "endpoint": "POST /v1/entity-orders/{{id}}/human-kernel",
     "description": "Create a secure session for the human owner",
     "required": true
-  }
+  }}
 
 ## Human Actions Required
 
@@ -163,4 +170,6 @@ contracts up to a defined limit). The human member is always the legal owner.
     ),
 )
 async def llms_txt() -> PlainTextResponse:
-    return PlainTextResponse(content=LLMS_TXT_CONTENT, media_type="text/plain")
+    settings = get_settings()
+    content = LLMS_TXT_TEMPLATE.format(base_url=settings.BASE_URL)
+    return PlainTextResponse(content=content, media_type="text/plain")

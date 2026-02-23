@@ -287,11 +287,17 @@ async def name_check(
     previous_state = order.state
 
     # Run the name check
-    result = await name_check_service.check_name_availability(
-        jurisdiction=order.jurisdiction,
-        entity_name=order.requested_name,
-        entity_type=order.vehicle_type,
-    )
+    try:
+        result = await name_check_service.check_name_availability(
+            jurisdiction=order.jurisdiction,
+            entity_name=order.requested_name,
+            entity_type=order.vehicle_type,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Name check service unavailable: {exc}",
+        ) from exc
 
     # Transition based on result
     target_state = (
@@ -354,24 +360,33 @@ async def record_payment(
     session: AsyncSession = Depends(get_db),
 ) -> StateTransitionResponse:
     order = await _get_order_or_404(session, order_id)
+    previous_state = order.state
 
-    # If in name_check_passed, move to payment_pending first
-    if order.state == OrderState.NAME_CHECK_PASSED:
-        return await _do_transition(
-            session,
-            order_id,
-            OrderState.PAYMENT_PENDING,
-            actor="api",
-            details={"stub": True, "note": "Stripe integration pending"},
+    # Determine target state based on current state
+    if order.state in (OrderState.NAME_CHECK_PASSED, OrderState.PAYMENT_FAILED):
+        target = OrderState.PAYMENT_PENDING
+    elif order.state == OrderState.PAYMENT_PENDING:
+        target = OrderState.PAYMENT_COMPLETE
+    else:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot record payment from state '{order.state}'",
         )
 
-    # If in payment_pending (or payment_failed), complete it
-    return await _do_transition(
-        session,
-        order_id,
-        OrderState.PAYMENT_COMPLETE,
-        actor="api",
-        details={"stub": True, "note": "Stripe integration pending"},
+    try:
+        order = await transition_order(
+            session, order, target, actor="api",
+            details={"stub": True, "note": "Stripe integration pending"},
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    return StateTransitionResponse(
+        previous_state=previous_state,
+        new_state=order.state,
+        timestamp=now,
+        order=entity_order_service.build_order_response(order),
     )
 
 
@@ -403,8 +418,6 @@ async def create_kernel_session(
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-    await session.commit()
 
     from app.config import get_settings
     settings = get_settings()
@@ -453,10 +466,15 @@ async def generate_documents(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-    await session.flush()
+    # Check if all documents are placeholders/failed (no real rendering)
+    real_docs = [d for d in documents if d.template_version not in ("no_template", "render_failed")]
+    if len(documents) > 0 and len(real_docs) == 0:
+        raise HTTPException(
+            status_code=500,
+            detail="All document rendering failed — no real documents were generated.",
+        )
 
     now = datetime.datetime.now(datetime.timezone.utc)
-    # Refresh order to get updated state
     return StateTransitionResponse(
         previous_state=previous_state,
         new_state=order.state,

@@ -173,7 +173,7 @@ class TestOrderStateEnum:
 
     def test_state_count(self):
         """Should have exactly 21 states."""
-        assert len(OrderState) == 21
+        assert len(OrderState) == 22
 
     def test_comparison_with_strings(self):
         """StrEnum values should compare equal to their string values."""

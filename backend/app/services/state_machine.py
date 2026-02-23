@@ -51,6 +51,7 @@ class OrderState(StrEnum):
     BANK_PACK_READY = "bank_pack_ready"
     ACTIVE = "active"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 # ---------------------------------------------------------------------------
@@ -58,48 +59,54 @@ class OrderState(StrEnum):
 # ---------------------------------------------------------------------------
 
 VALID_TRANSITIONS: dict[str, list[str]] = {
-    OrderState.DRAFT: [OrderState.INTAKE_COMPLETE, OrderState.FAILED],
+    OrderState.DRAFT: [OrderState.INTAKE_COMPLETE, OrderState.FAILED, OrderState.CANCELLED],
     OrderState.INTAKE_COMPLETE: [
         OrderState.NAME_CHECK_PASSED,
         OrderState.NAME_CHECK_FAILED,
         OrderState.FAILED,
+        OrderState.CANCELLED,
     ],
-    OrderState.NAME_CHECK_FAILED: [OrderState.INTAKE_COMPLETE, OrderState.FAILED],
-    OrderState.NAME_CHECK_PASSED: [OrderState.PAYMENT_PENDING, OrderState.FAILED],
+    OrderState.NAME_CHECK_FAILED: [OrderState.INTAKE_COMPLETE, OrderState.FAILED, OrderState.CANCELLED],
+    OrderState.NAME_CHECK_PASSED: [OrderState.PAYMENT_PENDING, OrderState.FAILED, OrderState.CANCELLED],
     OrderState.PAYMENT_PENDING: [
         OrderState.PAYMENT_COMPLETE,
         OrderState.PAYMENT_FAILED,
         OrderState.FAILED,
+        OrderState.CANCELLED,
     ],
-    OrderState.PAYMENT_FAILED: [OrderState.PAYMENT_PENDING, OrderState.FAILED],
-    OrderState.PAYMENT_COMPLETE: [OrderState.HUMAN_KERNEL_REQUIRED, OrderState.FAILED],
+    OrderState.PAYMENT_FAILED: [OrderState.PAYMENT_PENDING, OrderState.FAILED, OrderState.CANCELLED],
+    OrderState.PAYMENT_COMPLETE: [OrderState.HUMAN_KERNEL_REQUIRED, OrderState.FAILED, OrderState.CANCELLED],
     OrderState.HUMAN_KERNEL_REQUIRED: [
         OrderState.HUMAN_KERNEL_COMPLETED,
         OrderState.KERNEL_EXPIRED,
         OrderState.SANCTIONS_BLOCKED,
         OrderState.FAILED,
+        OrderState.CANCELLED,
     ],
-    OrderState.KERNEL_EXPIRED: [OrderState.HUMAN_KERNEL_REQUIRED, OrderState.FAILED],
+    OrderState.KERNEL_EXPIRED: [OrderState.HUMAN_KERNEL_REQUIRED, OrderState.FAILED, OrderState.CANCELLED],
     OrderState.SANCTIONS_BLOCKED: [OrderState.FAILED],
-    OrderState.HUMAN_KERNEL_COMPLETED: [OrderState.DOCS_GENERATED, OrderState.FAILED],
-    OrderState.DOCS_GENERATED: [OrderState.STATE_FILING_SUBMITTED, OrderState.FAILED],
+    OrderState.HUMAN_KERNEL_COMPLETED: [OrderState.DOCS_GENERATED, OrderState.FAILED, OrderState.CANCELLED],
+    OrderState.DOCS_GENERATED: [OrderState.STATE_FILING_SUBMITTED, OrderState.FAILED, OrderState.CANCELLED],
     OrderState.STATE_FILING_SUBMITTED: [
         OrderState.STATE_CONFIRMED,
         OrderState.FILING_REJECTED,
         OrderState.FAILED,
+        OrderState.CANCELLED,
     ],
-    OrderState.FILING_REJECTED: [OrderState.DOCS_GENERATED, OrderState.FAILED],
-    OrderState.STATE_CONFIRMED: [OrderState.EIN_PENDING, OrderState.FAILED],
+    OrderState.FILING_REJECTED: [OrderState.DOCS_GENERATED, OrderState.FAILED, OrderState.CANCELLED],
+    OrderState.STATE_CONFIRMED: [OrderState.EIN_PENDING, OrderState.FAILED, OrderState.CANCELLED],
     OrderState.EIN_PENDING: [
         OrderState.EIN_ISSUED,
         OrderState.EIN_MANUAL_REVIEW,
         OrderState.FAILED,
+        OrderState.CANCELLED,
     ],
-    OrderState.EIN_MANUAL_REVIEW: [OrderState.EIN_ISSUED, OrderState.FAILED],
-    OrderState.EIN_ISSUED: [OrderState.BANK_PACK_READY, OrderState.FAILED],
-    OrderState.BANK_PACK_READY: [OrderState.ACTIVE, OrderState.FAILED],
-    OrderState.ACTIVE: [],
-    OrderState.FAILED: [],
+    OrderState.EIN_MANUAL_REVIEW: [OrderState.EIN_ISSUED, OrderState.FAILED, OrderState.CANCELLED],
+    OrderState.EIN_ISSUED: [OrderState.BANK_PACK_READY, OrderState.FAILED, OrderState.CANCELLED],
+    OrderState.BANK_PACK_READY: [OrderState.ACTIVE, OrderState.FAILED, OrderState.CANCELLED],
+    OrderState.ACTIVE: [],       # terminal — fully formed
+    OrderState.FAILED: [],       # terminal — unrecoverable
+    OrderState.CANCELLED: [],    # terminal — user/ops cancelled
 }
 
 

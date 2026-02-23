@@ -210,9 +210,16 @@ export interface HealthResponse {
 }
 
 /** Normalised error thrown by apiFetch on non-2xx responses */
-export interface ApiError {
+export class ApiError extends Error {
   detail: string;
   status: number;
+
+  constructor(detail: string, status: number) {
+    super(detail);
+    this.name = "ApiError";
+    this.detail = detail;
+    this.status = status;
+  }
 }
 
 /**
@@ -268,11 +275,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       detail: res.statusText,
     }))) as { detail?: string };
 
-    const err: ApiError = {
-      detail: body.detail ?? "Unknown API error",
-      status: res.status,
-    };
-    throw err;
+    throw new ApiError(body.detail ?? "Unknown API error", res.status);
   }
 
   // 204 No Content — return undefined cast to T
