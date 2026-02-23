@@ -1,6 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Landing } from "@/pages/Landing";
+import { IntakeWizard } from "@/pages/IntakeWizard";
+import { Dashboard } from "@/pages/Dashboard";
+import { OrderDetail } from "@/pages/Dashboard/OrderDetail";
 
 // Lightweight placeholder pages for routes that haven't been built yet.
 function Placeholder({ title }: { title: string }) {
@@ -19,18 +22,9 @@ export function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Landing />} />
-        <Route
-          path="start"
-          element={<Placeholder title="Intake Wizard" />}
-        />
-        <Route
-          path="dashboard"
-          element={<Placeholder title="Dashboard" />}
-        />
-        <Route
-          path="dashboard/:orderId"
-          element={<Placeholder title="Order Detail" />}
-        />
+        <Route path="start" element={<IntakeWizard />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="dashboard/:orderId" element={<OrderDetail />} />
         <Route
           path="kernel/:token"
           element={<Placeholder title="Human Kernel" />}

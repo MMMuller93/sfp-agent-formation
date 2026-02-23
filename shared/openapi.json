@@ -1,0 +1,1493 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SFP Entity Formation API",
+    "description": "Agent-native legal entity formation service. AI agents discover this API via MCP Registry, llms.txt, or OpenAPI spec and invoke it to form Delaware LLCs, Wyoming DAO LLCs, and other entity types on behalf of their human owners. Human involvement is minimized to SSN collection, KYC, and payment approval \u2014 the agent handles everything else.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health check",
+        "description": "Returns service status and version. Used by load balancers and monitoring.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/llms.txt": {
+      "get": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "LLMs.txt \u2014 machine-readable API description",
+        "description": "Returns a plain-text description of the SFP Entity Formation API for AI agents and LLMs. Follows the llms.txt convention.",
+        "operationId": "llms_txt_llms_txt_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Create entity formation order",
+        "description": "Start a new entity formation order. Requires at least one member. Returns the created order with pricing and next required actions.",
+        "operationId": "create_order_v1_entity_orders_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "List entity orders",
+        "description": "Paginated list of entity orders with optional filtering.",
+        "operationId": "list_orders_v1_entity_orders_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 20,
+              "title": "Per Page"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "jurisdiction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by jurisdiction code",
+              "title": "Jurisdiction"
+            },
+            "description": "Filter by jurisdiction code"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by order state",
+              "title": "State"
+            },
+            "description": "Filter by order state"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}": {
+      "get": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Get entity order",
+        "description": "Retrieve a single entity order by ID with next required actions.",
+        "operationId": "get_order_v1_entity_orders__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Update entity name",
+        "description": "Update the requested entity name. Only allowed in draft or name_check_failed states.",
+        "operationId": "update_order_v1_entity_orders__order_id__patch",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNameRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/name-check": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Run name availability check",
+        "description": "Check whether the requested entity name is available in the target jurisdiction. Transitions intake_complete -> name_check_passed.",
+        "operationId": "name_check_v1_entity_orders__order_id__name_check_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/documents/generate": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Generate formation documents",
+        "description": "Generate operating agreement, certificate of formation, and Agent Authority Schedule. Transitions human_kernel_completed -> docs_generated.",
+        "operationId": "generate_documents_v1_entity_orders__order_id__documents_generate_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/filing": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Submit state filing",
+        "description": "Submit formation documents to the state for filing. Transitions docs_generated -> state_filing_submitted.",
+        "operationId": "submit_filing_v1_entity_orders__order_id__filing_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/ein": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Start EIN application",
+        "description": "Initiate IRS EIN application (Form SS-4) for the formed entity. Transitions state_confirmed -> ein_pending.",
+        "operationId": "apply_ein_v1_entity_orders__order_id__ein_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/bank-pack": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Generate bank pack",
+        "description": "Generate the bank-pack document bundle for banking introduction. Transitions ein_issued -> bank_pack_ready.",
+        "operationId": "generate_bank_pack_v1_entity_orders__order_id__bank_pack_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/activate": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Activate entity",
+        "description": "Mark the entity as fully formed and active. Transitions bank_pack_ready -> active.",
+        "operationId": "activate_entity_v1_entity_orders__order_id__activate_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Register webhook",
+        "description": "Register a URL to receive entity status update notifications. Returns the registration with a signing secret for HMAC verification.",
+        "operationId": "register_webhook_v1_webhooks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/v1/human/secure/{token}": {
+      "get": {
+        "tags": [
+          "human-kernel"
+        ],
+        "summary": "Get kernel session status",
+        "description": "Returns the current status of a human kernel session. Used by the secure form to show which steps are pending.",
+        "operationId": "get_session_status_v1_human_secure__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KernelSessionStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/human/secure/{token}/submit": {
+      "post": {
+        "tags": [
+          "human-kernel"
+        ],
+        "summary": "Submit a kernel step",
+        "description": "Complete a step in the human kernel flow. On success, advances the session. When all steps complete, the order transitions to human_kernel_completed and a webhook fires.",
+        "operationId": "submit_step_v1_human_secure__token__submit_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepSubmission"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/human/secure/{token}/status": {
+      "get": {
+        "tags": [
+          "human-kernel"
+        ],
+        "summary": "Check session completion",
+        "description": "Quick check whether the human owner has completed all required steps.",
+        "operationId": "check_completion_v1_human_secure__token__status_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Check Completion V1 Human Secure  Token  Status Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActionItem": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "Machine-readable action identifier"
+          },
+          "endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint",
+            "description": "API endpoint to call, if applicable"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Human-readable guidance"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "description": "Whether this action is mandatory to progress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "description",
+          "required"
+        ],
+        "title": "ActionItem",
+        "description": "Describes a single action the caller should (or must) take next."
+      },
+      "AgentInput": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name",
+            "description": "Display name for the agent"
+          },
+          "authority_scope": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Authority Scope",
+            "description": "JSON object describing what the agent is authorised to do"
+          },
+          "transaction_limit_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Limit Cents",
+            "description": "Per-transaction spending limit in cents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "display_name",
+          "authority_scope"
+        ],
+        "title": "AgentInput",
+        "description": "An AI agent to register as part of the entity structure.",
+        "examples": [
+          {
+            "authority_scope": {
+              "can_initiate_wires": true,
+              "can_sign_checks": true,
+              "max_single_wire_cents": 5000000
+            },
+            "display_name": "Treasury Agent v1.2",
+            "transaction_limit_cents": 10000000
+          }
+        ]
+      },
+      "CreateOrderRequest": {
+        "properties": {
+          "jurisdiction": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 2,
+            "title": "Jurisdiction",
+            "description": "State code, e.g. DE, WY"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "title": "Vehicle Type",
+            "description": "Entity type: llc | dao_llc | corporation"
+          },
+          "requested_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Requested Name",
+            "description": "Desired entity name"
+          },
+          "service_tier": {
+            "type": "string",
+            "title": "Service Tier",
+            "description": "Service tier: self_serve | managed | autonomous",
+            "default": "self_serve"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberInput"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Members",
+            "description": "At least one member is required"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional AI agent to register"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata",
+            "description": "Arbitrary metadata to store with the order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jurisdiction",
+          "vehicle_type",
+          "requested_name",
+          "members"
+        ],
+        "title": "CreateOrderRequest",
+        "description": "Payload for ``POST /v1/entity-orders``.",
+        "examples": [
+          {
+            "agent": {
+              "authority_scope": {
+                "can_initiate_wires": true,
+                "can_sign_checks": true
+              },
+              "display_name": "Treasury Agent v1.2",
+              "transaction_limit_cents": 10000000
+            },
+            "jurisdiction": "DE",
+            "members": [
+              {
+                "email": "jane@example.com",
+                "legal_name": "Jane Doe",
+                "ownership_percentage": 100.0,
+                "role": "member"
+              }
+            ],
+            "metadata": {
+              "campaign": "launch_q1",
+              "source": "api"
+            },
+            "requested_name": "Meridian Autonomous Holdings LLC",
+            "service_tier": "managed",
+            "vehicle_type": "llc"
+          }
+        ]
+      },
+      "CreateWebhookRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url",
+            "description": "HTTPS URL to receive webhook POST requests"
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Events",
+            "description": "Event types to subscribe to, e.g. [\"order.state_changed\", \"order.completed\", \"filing.confirmed\"]"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "events"
+        ],
+        "title": "CreateWebhookRequest",
+        "description": "Payload for ``POST /v1/webhooks``.",
+        "examples": [
+          {
+            "events": [
+              "order.state_changed",
+              "order.completed"
+            ],
+            "url": "https://example.com/webhooks/sfp"
+          }
+        ]
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "HealthResponse"
+      },
+      "KernelSessionStatus": {
+        "properties": {
+          "token_prefix": {
+            "type": "string",
+            "title": "Token Prefix",
+            "description": "First 8 chars of token"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "pending | in_progress | completed | expired"
+          },
+          "completed_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Completed Steps"
+          },
+          "remaining_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Remaining Steps"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "is_expired": {
+            "type": "boolean",
+            "title": "Is Expired"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token_prefix",
+          "status",
+          "completed_steps",
+          "remaining_steps",
+          "expires_at",
+          "is_expired"
+        ],
+        "title": "KernelSessionStatus",
+        "description": "Status of a human kernel session."
+      },
+      "MemberInput": {
+        "properties": {
+          "legal_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Legal Name",
+            "description": "Full legal name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 320
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Contact email"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "Role in the entity: member | manager | registered_agent | responsible_party",
+            "default": "member"
+          },
+          "ownership_percentage": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ownership Percentage",
+            "description": "Ownership stake as a percentage (0-100)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "legal_name"
+        ],
+        "title": "MemberInput",
+        "description": "A natural person to associate with the entity order.",
+        "examples": [
+          {
+            "email": "jane@example.com",
+            "legal_name": "Jane Doe",
+            "ownership_percentage": 50.0,
+            "role": "member"
+          }
+        ]
+      },
+      "OrderListResponse": {
+        "properties": {
+          "orders": {
+            "items": {
+              "$ref": "#/components/schemas/OrderSummary"
+            },
+            "type": "array",
+            "title": "Orders"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total",
+            "description": "Total matching orders"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "orders",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "OrderListResponse",
+        "description": "Paginated list of orders."
+      },
+      "OrderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "title": "Vehicle Type"
+          },
+          "requested_name": {
+            "type": "string",
+            "title": "Requested Name"
+          },
+          "formatted_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatted Name"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "service_tier": {
+            "type": "string",
+            "title": "Service Tier"
+          },
+          "pricing_cents": {
+            "type": "integer",
+            "title": "Pricing Cents"
+          },
+          "payment_status": {
+            "type": "string",
+            "title": "Payment Status"
+          },
+          "next_required_actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionItem"
+            },
+            "type": "array",
+            "title": "Next Required Actions",
+            "description": "Actions the caller should take to advance the order"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "jurisdiction",
+          "vehicle_type",
+          "requested_name",
+          "state",
+          "service_tier",
+          "pricing_cents",
+          "payment_status",
+          "created_at"
+        ],
+        "title": "OrderResponse",
+        "description": "Canonical representation of an entity order.",
+        "examples": [
+          {
+            "created_at": "2026-02-22T18:00:00Z",
+            "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "jurisdiction": "DE",
+            "next_required_actions": [
+              {
+                "action": "complete_intake",
+                "description": "Submit member/agent details to complete intake",
+                "endpoint": "POST /v1/entity-orders/a1b2c3d4-e5f6-7890-abcd-ef1234567890/intake",
+                "required": true
+              }
+            ],
+            "payment_status": "unpaid",
+            "pricing_cents": 79900,
+            "requested_name": "Meridian Autonomous Holdings LLC",
+            "service_tier": "managed",
+            "state": "draft",
+            "vehicle_type": "llc"
+          }
+        ]
+      },
+      "OrderSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "requested_name": {
+            "type": "string",
+            "title": "Requested Name"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "title": "Vehicle Type"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "requested_name",
+          "state",
+          "jurisdiction",
+          "vehicle_type",
+          "created_at"
+        ],
+        "title": "OrderSummary",
+        "description": "Lightweight order representation for list endpoints."
+      },
+      "StateTransitionResponse": {
+        "properties": {
+          "previous_state": {
+            "type": "string",
+            "title": "Previous State"
+          },
+          "new_state": {
+            "type": "string",
+            "title": "New State"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "order": {
+            "$ref": "#/components/schemas/OrderResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "previous_state",
+          "new_state",
+          "timestamp",
+          "order"
+        ],
+        "title": "StateTransitionResponse",
+        "description": "Response returned after a successful state transition."
+      },
+      "StepResponse": {
+        "properties": {
+          "step": {
+            "type": "string",
+            "title": "Step"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "completed_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Completed Steps"
+          },
+          "remaining_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Remaining Steps"
+          },
+          "all_complete": {
+            "type": "boolean",
+            "title": "All Complete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step",
+          "status",
+          "completed_steps",
+          "remaining_steps",
+          "all_complete"
+        ],
+        "title": "StepResponse",
+        "description": "Response after completing a kernel step."
+      },
+      "StepSubmission": {
+        "properties": {
+          "step": {
+            "type": "string",
+            "title": "Step",
+            "description": "Step to complete: pii_collection | kyc_verification | document_signing | attestation"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data",
+            "description": "Step-specific data (e.g., encrypted SSN for pii_collection)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step"
+        ],
+        "title": "StepSubmission",
+        "description": "Payload for completing a kernel step."
+      },
+      "UpdateNameRequest": {
+        "properties": {
+          "requested_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Requested Name",
+            "description": "New entity name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requested_name"
+        ],
+        "title": "UpdateNameRequest",
+        "description": "Body for PATCH /{order_id} \u2014 update the requested entity name."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WebhookResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "events",
+          "active",
+          "created_at"
+        ],
+        "title": "WebhookResponse",
+        "description": "Representation of a webhook registration.",
+        "examples": [
+          {
+            "active": true,
+            "created_at": "2026-02-22T18:00:00Z",
+            "events": [
+              "order.state_changed",
+              "order.completed"
+            ],
+            "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            "url": "https://example.com/webhooks/sfp"
+          }
+        ]
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

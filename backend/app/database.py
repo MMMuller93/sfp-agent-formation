@@ -32,22 +32,36 @@ settings = get_settings()
 # Engines
 # ---------------------------------------------------------------------------
 
-main_engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=(not settings.is_production),
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-    pool_recycle=300,
-)
+_is_sqlite = "sqlite" in settings.DATABASE_URL
+
+# PostgreSQL supports pool_size/max_overflow; SQLite (used in tests) does not.
+_main_engine_kwargs: dict[str, object] = {
+    "echo": not settings.is_production,
+}
+if not _is_sqlite:
+    _main_engine_kwargs.update(
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True,
+        pool_recycle=300,
+    )
+
+main_engine = create_async_engine(settings.DATABASE_URL, **_main_engine_kwargs)
+
+_pii_is_sqlite = "sqlite" in settings.PII_VAULT_DATABASE_URL
+_pii_engine_kwargs: dict[str, object] = {
+    "echo": False,  # Never log PII vault queries
+}
+if not _pii_is_sqlite:
+    _pii_engine_kwargs.update(
+        pool_size=5,
+        max_overflow=5,
+        pool_pre_ping=True,
+        pool_recycle=300,
+    )
 
 pii_vault_engine = create_async_engine(
-    settings.PII_VAULT_DATABASE_URL,
-    echo=False,  # Never log PII vault queries
-    pool_size=5,
-    max_overflow=5,
-    pool_pre_ping=True,
-    pool_recycle=300,
+    settings.PII_VAULT_DATABASE_URL, **_pii_engine_kwargs
 )
 
 # ---------------------------------------------------------------------------
