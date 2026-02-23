@@ -191,7 +191,6 @@ function getNextActions(order: OrderResponse): NextAction[] {
         href: `/kernel/${order.id}`,
       });
       break;
-      break;
     case "active":
       actions.push({
         title: "View Documents",

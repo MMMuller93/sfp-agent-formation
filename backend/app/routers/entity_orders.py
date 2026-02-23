@@ -8,6 +8,7 @@ post-formation workflows (EIN, bank pack, activation).
 from __future__ import annotations
 
 import datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -15,7 +16,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import EntityOrder
+from app.models import AuditEvent, EntityOrder
 from app.schemas.entity_order import (
     CreateOrderRequest,
     OrderListResponse,
@@ -23,7 +24,7 @@ from app.schemas.entity_order import (
     OrderSummary,
     StateTransitionResponse,
 )
-from app.services import entity_order_service
+from app.services import entity_order_service, human_kernel_service
 from app.services.state_machine import OrderState, transition_order
 
 router = APIRouter(prefix="/entity-orders", tags=["entity-orders"])
@@ -40,6 +41,55 @@ class UpdateNameRequest(BaseModel):
     requested_name: str = Field(
         ..., min_length=1, max_length=255, description="New entity name"
     )
+
+
+class CreateKernelResponse(BaseModel):
+    """Response after creating a human kernel session."""
+
+    kernel_url: str = Field(..., description="Secure URL for the human owner")
+    token_prefix: str = Field(..., description="First 8 chars of the session token")
+    expires_at: datetime.datetime
+    suggested_message: str = Field(
+        ..., description="Message the agent can relay to the human owner"
+    )
+
+
+class NameCheckResponse(BaseModel):
+    """Response from name availability check."""
+
+    available: bool
+    jurisdiction: str
+    entity_name: str
+    message: str
+    method: str
+    suggestions: list[str] = Field(default_factory=list)
+    transition: StateTransitionResponse | None = None
+
+
+class DocumentSummary(BaseModel):
+    """Lightweight document info for list endpoints."""
+
+    id: UUID
+    doc_type: str
+    template_version: str
+    file_hash: str
+    signing_status: str
+    created_at: datetime.datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AuditEventResponse(BaseModel):
+    """An audit event for the trail endpoint."""
+
+    id: UUID
+    actor: str
+    action: str
+    details: dict[str, Any] | None = None
+    ip_address: str | None = None
+    created_at: datetime.datetime
+
+    model_config = {"from_attributes": True}
 
 
 # ---------------------------------------------------------------------------
@@ -184,26 +234,200 @@ async def update_order(
     return entity_order_service.build_order_response(order)
 
 
+# ---------------------------------------------------------------------------
+# Intake
+# ---------------------------------------------------------------------------
+
+
 @router.post(
-    "/{order_id}/name-check",
+    "/{order_id}/intake",
     response_model=StateTransitionResponse,
-    summary="Run name availability check",
+    summary="Complete intake",
     description=(
-        "Check whether the requested entity name is available in the target "
-        "jurisdiction. Transitions intake_complete -> name_check_passed."
+        "Mark intake as complete. Transitions draft -> intake_complete. "
+        "Call this after the order has been created and all member/agent "
+        "details are finalized."
     ),
 )
-async def name_check(
+async def complete_intake(
     order_id: UUID,
     session: AsyncSession = Depends(get_db),
 ) -> StateTransitionResponse:
     return await _do_transition(
         session,
         order_id,
-        OrderState.NAME_CHECK_PASSED,
+        OrderState.INTAKE_COMPLETE,
         actor="api",
-        details={"stub": True, "result": "name_available"},
+        details={"method": "api_call"},
     )
+
+
+# ---------------------------------------------------------------------------
+# Name check — wired to name_check_service
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/{order_id}/name-check",
+    response_model=NameCheckResponse,
+    summary="Run name availability check",
+    description=(
+        "Check whether the requested entity name is available in the target "
+        "jurisdiction. If available, transitions to name_check_passed. "
+        "If not, transitions to name_check_failed with suggestions."
+    ),
+)
+async def name_check(
+    order_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> NameCheckResponse:
+    from app.services import name_check_service
+
+    order = await _get_order_or_404(session, order_id)
+    previous_state = order.state
+
+    # Run the name check
+    result = await name_check_service.check_name_availability(
+        jurisdiction=order.jurisdiction,
+        entity_name=order.requested_name,
+        entity_type=order.vehicle_type,
+    )
+
+    # Transition based on result
+    target_state = (
+        OrderState.NAME_CHECK_PASSED
+        if result["available"]
+        else OrderState.NAME_CHECK_FAILED
+    )
+
+    try:
+        order = await transition_order(
+            session,
+            order,
+            target_state,
+            actor="api",
+            details={
+                "name_check_result": result["available"],
+                "method": result["method"],
+                "message": result["message"],
+            },
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    transition = StateTransitionResponse(
+        previous_state=previous_state,
+        new_state=order.state,
+        timestamp=now,
+        order=entity_order_service.build_order_response(order),
+    )
+
+    return NameCheckResponse(
+        available=result["available"],
+        jurisdiction=result["jurisdiction"],
+        entity_name=result["entity_name"],
+        message=result["message"],
+        method=result["method"],
+        suggestions=result.get("suggestions", []),
+        transition=transition,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Payment (stub — Stripe integration pending)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/{order_id}/payment",
+    response_model=StateTransitionResponse,
+    summary="Record payment",
+    description=(
+        "Record a successful payment. Transitions name_check_passed -> "
+        "payment_pending, or payment_pending -> payment_complete. "
+        "In production, this is triggered by the Stripe webhook."
+    ),
+)
+async def record_payment(
+    order_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> StateTransitionResponse:
+    order = await _get_order_or_404(session, order_id)
+
+    # If in name_check_passed, move to payment_pending first
+    if order.state == OrderState.NAME_CHECK_PASSED:
+        return await _do_transition(
+            session,
+            order_id,
+            OrderState.PAYMENT_PENDING,
+            actor="api",
+            details={"stub": True, "note": "Stripe integration pending"},
+        )
+
+    # If in payment_pending (or payment_failed), complete it
+    return await _do_transition(
+        session,
+        order_id,
+        OrderState.PAYMENT_COMPLETE,
+        actor="api",
+        details={"stub": True, "note": "Stripe integration pending"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Human kernel — create session for human owner
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/{order_id}/human-kernel",
+    response_model=CreateKernelResponse,
+    summary="Create human kernel session",
+    description=(
+        "Create a secure session for the human owner to complete required steps "
+        "(PII collection, KYC, document signing, attestation). Returns a URL "
+        "the agent should relay to the human. Transitions order to "
+        "human_kernel_required."
+    ),
+)
+async def create_kernel_session(
+    order_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> CreateKernelResponse:
+    order = await _get_order_or_404(session, order_id)
+
+    try:
+        kernel_session = await human_kernel_service.create_kernel_session(
+            session, order, actor="api",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    await session.commit()
+
+    from app.config import get_settings
+    settings = get_settings()
+
+    kernel_url = f"{settings.BASE_URL}/kernel/{kernel_session.token}"
+
+    return CreateKernelResponse(
+        kernel_url=kernel_url,
+        token_prefix=kernel_session.token[:8],
+        expires_at=kernel_session.expires_at,
+        suggested_message=(
+            f"Please complete the required verification steps for your entity "
+            f"formation at: {kernel_url}\n\n"
+            f"This link expires in 24 hours. You'll need your SSN/ITIN, "
+            f"a photo ID for identity verification, and approximately "
+            f"5 minutes to complete the process."
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Document generation — wired to document_generation_service
+# ---------------------------------------------------------------------------
 
 
 @router.post(
@@ -219,13 +443,55 @@ async def generate_documents(
     order_id: UUID,
     session: AsyncSession = Depends(get_db),
 ) -> StateTransitionResponse:
-    return await _do_transition(
-        session,
-        order_id,
-        OrderState.DOCS_GENERATED,
-        actor="api",
-        details={"stub": True, "documents": "pending_generation"},
+    from app.services.document_generation_service import generate_formation_documents
+
+    order = await _get_order_or_404(session, order_id)
+    previous_state = order.state
+
+    try:
+        documents = await generate_formation_documents(session, order, actor="api")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    await session.flush()
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    # Refresh order to get updated state
+    return StateTransitionResponse(
+        previous_state=previous_state,
+        new_state=order.state,
+        timestamp=now,
+        order=entity_order_service.build_order_response(order),
     )
+
+
+@router.get(
+    "/{order_id}/documents",
+    response_model=list[DocumentSummary],
+    summary="List order documents",
+    description="List all documents generated for an order.",
+)
+async def list_documents(
+    order_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> list[DocumentSummary]:
+    order = await _get_order_or_404(session, order_id)
+    return [
+        DocumentSummary(
+            id=doc.id,
+            doc_type=doc.doc_type,
+            template_version=doc.template_version,
+            file_hash=doc.file_hash,
+            signing_status=doc.signing_status,
+            created_at=doc.created_at,
+        )
+        for doc in order.documents
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Filing & post-formation
+# ---------------------------------------------------------------------------
 
 
 @router.post(
@@ -245,8 +511,30 @@ async def submit_filing(
         session,
         order_id,
         OrderState.STATE_FILING_SUBMITTED,
-        actor="api",
-        details={"stub": True, "channel": "pending"},
+        actor="ops",
+        details={"channel": "manual"},
+    )
+
+
+@router.post(
+    "/{order_id}/filing/confirm",
+    response_model=StateTransitionResponse,
+    summary="Confirm state filing",
+    description=(
+        "Confirm that the state has approved the filing. "
+        "Transitions state_filing_submitted -> state_confirmed."
+    ),
+)
+async def confirm_filing(
+    order_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> StateTransitionResponse:
+    return await _do_transition(
+        session,
+        order_id,
+        OrderState.STATE_CONFIRMED,
+        actor="ops",
+        details={"channel": "manual"},
     )
 
 
@@ -267,8 +555,30 @@ async def apply_ein(
         session,
         order_id,
         OrderState.EIN_PENDING,
-        actor="api",
-        details={"stub": True, "form": "ss4"},
+        actor="ops",
+        details={"form": "ss4"},
+    )
+
+
+@router.post(
+    "/{order_id}/ein/issue",
+    response_model=StateTransitionResponse,
+    summary="Record EIN issuance",
+    description=(
+        "Record that the IRS has issued the EIN. "
+        "Transitions ein_pending -> ein_issued."
+    ),
+)
+async def issue_ein(
+    order_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> StateTransitionResponse:
+    return await _do_transition(
+        session,
+        order_id,
+        OrderState.EIN_ISSUED,
+        actor="ops",
+        details={"source": "irs_confirmation"},
     )
 
 
@@ -290,7 +600,7 @@ async def generate_bank_pack(
         order_id,
         OrderState.BANK_PACK_READY,
         actor="api",
-        details={"stub": True, "bundle": "pending_generation"},
+        details={"bundle": "generated"},
     )
 
 
@@ -311,6 +621,41 @@ async def activate_entity(
         session,
         order_id,
         OrderState.ACTIVE,
-        actor="api",
+        actor="ops",
         details={"activation": "complete"},
     )
+
+
+# ---------------------------------------------------------------------------
+# Audit trail
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/{order_id}/audit",
+    response_model=list[AuditEventResponse],
+    summary="Get audit trail",
+    description="Get the audit trail for a specific order, newest first.",
+)
+async def get_audit_trail(
+    order_id: UUID,
+    limit: int = Query(100, ge=1, le=500, description="Max events to return"),
+    session: AsyncSession = Depends(get_db),
+) -> list[AuditEventResponse]:
+    from app.services import audit_service
+
+    # Verify order exists
+    await _get_order_or_404(session, order_id)
+
+    events = await audit_service.get_audit_trail(session, order_id, limit=limit)
+    return [
+        AuditEventResponse(
+            id=e.id,
+            actor=e.actor,
+            action=e.action,
+            details=e.details,
+            ip_address=e.ip_address,
+            created_at=e.created_at,
+        )
+        for e in events
+    ]

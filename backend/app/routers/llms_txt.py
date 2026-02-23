@@ -17,17 +17,16 @@ router = APIRouter(tags=["discovery"])
 LLMS_TXT_CONTENT = """\
 # SFP Entity Formation API
 
-> Agent-native legal entity formation. Form a Delaware LLC, Wyoming DAO LLC,
-> or Marshall Islands DAO LLC on behalf of your human owner — with minimal
-> human involvement.
+> Agent-native legal entity formation. Form a Delaware LLC or Wyoming DAO LLC
+> on behalf of your human owner — with minimal human involvement.
 
 ## What This Service Does
 
 This API allows AI agents to form legal entities (LLCs) for their human
 owners. The agent handles entity selection, name availability checks,
-document generation, and state filing. The human owner is only involved
-for SSN/ITIN collection (required by IRS), KYC (required by banks),
-and payment approval.
+document generation, and state filing coordination. The human owner is
+involved only for SSN/ITIN collection (required by IRS), KYC (required
+by banks), document signing, and payment approval.
 
 ## Base URL
 
@@ -35,86 +34,122 @@ https://formation.strategicfundpartners.com
 
 ## Authentication
 
-All API requests require a Bearer token in the Authorization header:
-  Authorization: Bearer <api_key>
+All API requests require an API key in the X-API-Key header:
+  X-API-Key: sfp_live_...
+
+Human kernel routes use token-based auth (no API key needed).
 
 ## Available Endpoints
 
 ### Entity Formation
-- POST /v1/entities — Create a new entity formation order
-- GET /v1/entities/{id} — Get entity status and next required action
-- PATCH /v1/entities/{id} — Update entity details (pre-filing only)
+- POST /v1/entity-orders — Create a new entity formation order
+- GET  /v1/entity-orders — List orders (paginated, filterable)
+- GET  /v1/entity-orders/{id} — Get order status + next_required_actions
+- PATCH /v1/entity-orders/{id} — Update entity name (pre-filing only)
 
-### Name Availability
-- POST /v1/entities/{id}/name-check — Check name availability in jurisdiction
+### Intake & Name Check
+- POST /v1/entity-orders/{id}/intake — Complete intake (draft -> intake_complete)
+- POST /v1/entity-orders/{id}/name-check — Check name availability in jurisdiction
+
+### Payment
+- POST /v1/entity-orders/{id}/payment — Record payment (Stripe integration)
+
+### Human Kernel (Owner Verification)
+- POST /v1/entity-orders/{id}/human-kernel — Create secure session for owner
+  Returns a kernel_url the agent relays to the human owner.
+
+### Human Kernel (Owner-Facing, Token Auth)
+- GET  /v1/human/secure/{token} — Get session status
+- POST /v1/human/secure/{token}/submit — Complete a verification step
+- GET  /v1/human/secure/{token}/status — Check completion
 
 ### Documents
-- POST /v1/entities/{id}/documents — Generate formation documents
-- GET /v1/entities/{id}/documents/{doc_id} — Download a specific document
+- POST /v1/entity-orders/{id}/documents/generate — Generate formation documents
+- GET  /v1/entity-orders/{id}/documents — List generated documents
 
-### Filing & Post-Formation
-- POST /v1/entities/{id}/file — Submit state filing
-- POST /v1/entities/{id}/ein — Start EIN application workflow
-- POST /v1/entities/{id}/banking-intro — Trigger banking partner application
+### Filing & Post-Formation (Ops)
+- POST /v1/entity-orders/{id}/filing — Submit state filing
+- POST /v1/entity-orders/{id}/filing/confirm — Confirm filing accepted
+- POST /v1/entity-orders/{id}/ein — Start EIN application
+- POST /v1/entity-orders/{id}/ein/issue — Record EIN issuance
+- POST /v1/entity-orders/{id}/bank-pack — Generate bank pack
+- POST /v1/entity-orders/{id}/activate — Mark entity active
+
+### Audit
+- GET /v1/entity-orders/{id}/audit — Get audit trail for an order
 
 ### Webhooks
 - POST /v1/webhooks — Register a webhook for status updates
 
 ### Discovery
-- GET /v1/jurisdictions — List available jurisdictions with pricing and timelines
+- GET /llms.txt — This file
+- GET /openapi.json — Full OpenAPI 3.1 spec
+- GET /health — Health check
 
-## Jurisdictions
+## Jurisdictions & Pricing
 
-| Jurisdiction       | Price | Timeline        | Notes                                |
-|--------------------|-------|-----------------|--------------------------------------|
-| Delaware LLC       | $499  | 1-3 business days | Default recommendation for most uses |
-| Wyoming DAO LLC    | $699  | 2-5 business days | Requires operational smart contract  |
-| Marshall Islands   | $4999 | 2-4 weeks        | Offshore, crypto-native              |
+| Jurisdiction     | Vehicle   | Price | Timeline          | Notes                          |
+|------------------|-----------|-------|-------------------|--------------------------------|
+| Delaware (DE)    | LLC       | $499  | 1-3 business days | Default for most uses          |
+| Wyoming (WY)     | DAO LLC   | $699  | 2-5 business days | Requires smart contract ID     |
 
 ## Entity Formation Workflow
 
-1. Agent calls POST /v1/entities with jurisdiction, entity_name, owner_email
-2. API returns entity_id and status
-3. Agent calls POST /v1/entities/{id}/name-check to verify name availability
-4. If available, API transitions to "human_action_required" with a secure link
-5. Agent sends the secure link to owner (for SSN entry and payment)
-6. Owner completes SSN entry and payment (approximately 2 minutes)
-7. Webhook fires with status update — agent resumes
-8. SFP files with the state, applies for EIN, delivers documents
-9. Final webhook: status = "active"
+1. Agent calls POST /v1/entity-orders with jurisdiction, vehicle_type,
+   requested_name, and members array
+2. API returns order with state="draft" and next_required_actions
+3. Agent calls POST /v1/entity-orders/{id}/intake to finalize details
+4. Agent calls POST /v1/entity-orders/{id}/name-check
+5. If name available -> state transitions to name_check_passed
+6. If not available -> name_check_failed with suggestions; agent can
+   PATCH the name and retry
+7. Payment is collected (Stripe)
+8. Agent calls POST /v1/entity-orders/{id}/human-kernel
+9. API returns kernel_url — agent relays this to the human owner
+10. Human completes: SSN entry, KYC, document signing, attestation (~5 min)
+11. Webhook fires on completion; order transitions to human_kernel_completed
+12. Agent or ops calls POST /v1/entity-orders/{id}/documents/generate
+13. SFP ops submits filing, confirms, applies for EIN
+14. EIN issued -> bank pack generated -> entity activated
+15. Final webhook: state = "active"
+
+## Key Design: next_required_actions
+
+Every GET /v1/entity-orders/{id} response includes a next_required_actions
+array telling the agent exactly what to do next. The agent never has to
+guess — just follow the actions.
+
+Example:
+  {
+    "action": "create_human_kernel",
+    "endpoint": "POST /v1/entity-orders/{id}/human-kernel",
+    "description": "Create a secure session for the human owner",
+    "required": true
+  }
 
 ## Human Actions Required
 
-| Action             | What the Owner Does       | Time Required |
-|--------------------|---------------------------|---------------|
-| SSN/ITIN entry     | Enter SSN in secure form  | 30 seconds    |
-| Payment approval   | Approve payment           | 30 seconds    |
-| KYC (banking only) | Photo ID + selfie         | 2-3 minutes   |
-
-## Status Codes
-
-intake -> name_check -> name_reserved -> docs_generated ->
-human_action_required -> ssn_collected -> payment_pending ->
-payment_complete -> filed -> confirmed ->
-ein_submitted -> ein_processing -> ein_issued -> active
-
-Terminal: rejected, cancelled, dissolved
-Error: filing_failed, ein_failed (with retry)
+| Action           | What the Owner Does              | Time Required |
+|------------------|----------------------------------|---------------|
+| PII collection   | Enter SSN/ITIN in secure form    | 30 seconds    |
+| KYC verification | Photo ID + selfie                | 2-3 minutes   |
+| Document signing | Review & sign operating agreement| 1-2 minutes   |
+| Attestation      | Confirm beneficial ownership     | 30 seconds    |
 
 ## Agent Authority
 
 Entities are formed with an Agent Authority Schedule — an exhibit to the
-operating agreement that defines the scope of actions the AI agent may take
+operating agreement defining the scope of actions the AI agent may take
 on behalf of the LLC (e.g., accept payments, issue invoices, execute
 contracts up to a defined limit). The human member is always the legal owner.
 
 ## Important Notes
 
 - The human owner is the legal member. The agent operates under delegated authority.
-- SSN/ITIN is encrypted (AES-256) and stored in a separate PII vault.
-- SSN is never exposed to the agent or any LLM.
+- SSN/ITIN is encrypted and stored in a separate PII vault — never exposed to agents.
 - This service forms standard LLCs — it does not create "AI-owned" entities.
-- This is not legal advice. Templates are attorney-drafted but standardized.
+- This is not legal advice. Templates require attorney review before production use.
+- MCP server available for Claude and other MCP-compatible agents.
 """
 
 

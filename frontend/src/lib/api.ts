@@ -111,6 +111,45 @@ export interface CreateOrderRequest {
   metadata?: Record<string, unknown> | null;
 }
 
+/** Name check result from POST /v1/entity-orders/{id}/name-check */
+export interface NameCheckResponse {
+  available: boolean;
+  jurisdiction: string;
+  entity_name: string;
+  message: string;
+  method: string;
+  suggestions: string[];
+  transition: StateTransitionResponse | null;
+}
+
+/** Human kernel creation response */
+export interface CreateKernelResponse {
+  kernel_url: string;
+  token_prefix: string;
+  expires_at: string;
+  suggested_message: string;
+}
+
+/** Document summary */
+export interface DocumentSummary {
+  id: string;
+  doc_type: string;
+  template_version: string;
+  file_hash: string;
+  signing_status: string;
+  created_at: string;
+}
+
+/** Audit event */
+export interface AuditEventItem {
+  id: string;
+  actor: string;
+  action: string;
+  details: Record<string, unknown> | null;
+  ip_address: string | null;
+  created_at: string;
+}
+
 /** PATCH /v1/entity-orders/{order_id} request body */
 export interface UpdateNameRequest {
   requested_name: string;
@@ -289,10 +328,31 @@ export const api = {
         body: JSON.stringify(payload),
       }),
 
+    /** POST /v1/entity-orders/{order_id}/intake — complete intake */
+    completeIntake: (orderId: string) =>
+      apiFetch<StateTransitionResponse>(
+        `/v1/entity-orders/${orderId}/intake`,
+        { method: "POST" },
+      ),
+
     /** POST /v1/entity-orders/{order_id}/name-check — run name availability check */
     nameCheck: (orderId: string) =>
-      apiFetch<StateTransitionResponse>(
+      apiFetch<NameCheckResponse>(
         `/v1/entity-orders/${orderId}/name-check`,
+        { method: "POST" },
+      ),
+
+    /** POST /v1/entity-orders/{order_id}/payment — record payment */
+    recordPayment: (orderId: string) =>
+      apiFetch<StateTransitionResponse>(
+        `/v1/entity-orders/${orderId}/payment`,
+        { method: "POST" },
+      ),
+
+    /** POST /v1/entity-orders/{order_id}/human-kernel — create human kernel session */
+    createKernel: (orderId: string) =>
+      apiFetch<CreateKernelResponse>(
+        `/v1/entity-orders/${orderId}/human-kernel`,
         { method: "POST" },
       ),
 
@@ -303,10 +363,21 @@ export const api = {
         { method: "POST" },
       ),
 
+    /** GET /v1/entity-orders/{order_id}/documents — list generated documents */
+    listDocuments: (orderId: string) =>
+      apiFetch<DocumentSummary[]>(`/v1/entity-orders/${orderId}/documents`),
+
     /** POST /v1/entity-orders/{order_id}/filing — submit state filing */
     submitFiling: (orderId: string) =>
       apiFetch<StateTransitionResponse>(
         `/v1/entity-orders/${orderId}/filing`,
+        { method: "POST" },
+      ),
+
+    /** POST /v1/entity-orders/{order_id}/filing/confirm — confirm state filing */
+    confirmFiling: (orderId: string) =>
+      apiFetch<StateTransitionResponse>(
+        `/v1/entity-orders/${orderId}/filing/confirm`,
         { method: "POST" },
       ),
 
@@ -315,6 +386,13 @@ export const api = {
       apiFetch<StateTransitionResponse>(`/v1/entity-orders/${orderId}/ein`, {
         method: "POST",
       }),
+
+    /** POST /v1/entity-orders/{order_id}/ein/issue — record EIN issuance */
+    issueEin: (orderId: string) =>
+      apiFetch<StateTransitionResponse>(
+        `/v1/entity-orders/${orderId}/ein/issue`,
+        { method: "POST" },
+      ),
 
     /** POST /v1/entity-orders/{order_id}/bank-pack — generate bank pack document bundle */
     generateBankPack: (orderId: string) =>
@@ -328,6 +406,12 @@ export const api = {
       apiFetch<StateTransitionResponse>(
         `/v1/entity-orders/${orderId}/activate`,
         { method: "POST" },
+      ),
+
+    /** GET /v1/entity-orders/{order_id}/audit — get audit trail */
+    getAuditTrail: (orderId: string, limit?: number) =>
+      apiFetch<AuditEventItem[]>(
+        `/v1/entity-orders/${orderId}/audit${buildQuery({ limit })}`,
       ),
   },
 

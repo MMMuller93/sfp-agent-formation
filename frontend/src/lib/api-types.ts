@@ -92,6 +92,26 @@ export interface paths {
         patch: operations["update_order_v1_entity_orders__order_id__patch"];
         trace?: never;
     };
+    "/v1/entity-orders/{order_id}/intake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete intake
+         * @description Mark intake as complete. Transitions draft -> intake_complete. Call this after the order has been created and all member/agent details are finalized.
+         */
+        post: operations["complete_intake_v1_entity_orders__order_id__intake_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/entity-orders/{order_id}/name-check": {
         parameters: {
             query?: never;
@@ -103,9 +123,49 @@ export interface paths {
         put?: never;
         /**
          * Run name availability check
-         * @description Check whether the requested entity name is available in the target jurisdiction. Transitions intake_complete -> name_check_passed.
+         * @description Check whether the requested entity name is available in the target jurisdiction. If available, transitions to name_check_passed. If not, transitions to name_check_failed with suggestions.
          */
         post: operations["name_check_v1_entity_orders__order_id__name_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/entity-orders/{order_id}/payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record payment
+         * @description Record a successful payment. Transitions name_check_passed -> payment_pending, or payment_pending -> payment_complete. In production, this is triggered by the Stripe webhook.
+         */
+        post: operations["record_payment_v1_entity_orders__order_id__payment_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/entity-orders/{order_id}/human-kernel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create human kernel session
+         * @description Create a secure session for the human owner to complete required steps (PII collection, KYC, document signing, attestation). Returns a URL the agent should relay to the human. Transitions order to human_kernel_required.
+         */
+        post: operations["create_kernel_session_v1_entity_orders__order_id__human_kernel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -132,6 +192,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/entity-orders/{order_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List order documents
+         * @description List all documents generated for an order.
+         */
+        get: operations["list_documents_v1_entity_orders__order_id__documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/entity-orders/{order_id}/filing": {
         parameters: {
             query?: never;
@@ -152,6 +232,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/entity-orders/{order_id}/filing/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm state filing
+         * @description Confirm that the state has approved the filing. Transitions state_filing_submitted -> state_confirmed.
+         */
+        post: operations["confirm_filing_v1_entity_orders__order_id__filing_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/entity-orders/{order_id}/ein": {
         parameters: {
             query?: never;
@@ -166,6 +266,26 @@ export interface paths {
          * @description Initiate IRS EIN application (Form SS-4) for the formed entity. Transitions state_confirmed -> ein_pending.
          */
         post: operations["apply_ein_v1_entity_orders__order_id__ein_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/entity-orders/{order_id}/ein/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record EIN issuance
+         * @description Record that the IRS has issued the EIN. Transitions ein_pending -> ein_issued.
+         */
+        post: operations["issue_ein_v1_entity_orders__order_id__ein_issue_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -206,6 +326,26 @@ export interface paths {
          * @description Mark the entity as fully formed and active. Transitions bank_pack_ready -> active.
          */
         post: operations["activate_entity_v1_entity_orders__order_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/entity-orders/{order_id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get audit trail
+         * @description Get the audit trail for a specific order, newest first.
+         */
+        get: operations["get_audit_trail_v1_entity_orders__order_id__audit_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -355,6 +495,58 @@ export interface components {
             transaction_limit_cents?: number | null;
         };
         /**
+         * AuditEventResponse
+         * @description An audit event for the trail endpoint.
+         */
+        AuditEventResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Actor */
+            actor: string;
+            /** Action */
+            action: string;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            } | null;
+            /** Ip Address */
+            ip_address?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * CreateKernelResponse
+         * @description Response after creating a human kernel session.
+         */
+        CreateKernelResponse: {
+            /**
+             * Kernel Url
+             * @description Secure URL for the human owner
+             */
+            kernel_url: string;
+            /**
+             * Token Prefix
+             * @description First 8 chars of the session token
+             */
+            token_prefix: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Suggested Message
+             * @description Message the agent can relay to the human owner
+             */
+            suggested_message: string;
+        };
+        /**
          * CreateOrderRequest
          * @description Payload for ``POST /v1/entity-orders``.
          * @example {
@@ -445,6 +637,30 @@ export interface components {
              */
             events: string[];
         };
+        /**
+         * DocumentSummary
+         * @description Lightweight document info for list endpoints.
+         */
+        DocumentSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Doc Type */
+            doc_type: string;
+            /** Template Version */
+            template_version: string;
+            /** File Hash */
+            file_hash: string;
+            /** Signing Status */
+            signing_status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -516,6 +732,25 @@ export interface components {
              * @description Ownership stake as a percentage (0-100)
              */
             ownership_percentage?: number | null;
+        };
+        /**
+         * NameCheckResponse
+         * @description Response from name availability check.
+         */
+        NameCheckResponse: {
+            /** Available */
+            available: boolean;
+            /** Jurisdiction */
+            jurisdiction: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Message */
+            message: string;
+            /** Method */
+            method: string;
+            /** Suggestions */
+            suggestions?: string[];
+            transition?: components["schemas"]["StateTransitionResponse"] | null;
         };
         /**
          * OrderListResponse
@@ -908,7 +1143,7 @@ export interface operations {
             };
         };
     };
-    name_check_v1_entity_orders__order_id__name_check_post: {
+    complete_intake_v1_entity_orders__order_id__intake_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -926,6 +1161,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StateTransitionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    name_check_v1_entity_orders__order_id__name_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NameCheckResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_payment_v1_entity_orders__order_id__payment_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateTransitionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_kernel_session_v1_entity_orders__order_id__human_kernel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateKernelResponse"];
                 };
             };
             /** @description Validation Error */
@@ -970,6 +1298,37 @@ export interface operations {
             };
         };
     };
+    list_documents_v1_entity_orders__order_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     submit_filing_v1_entity_orders__order_id__filing_post: {
         parameters: {
             query?: never;
@@ -1001,7 +1360,69 @@ export interface operations {
             };
         };
     };
+    confirm_filing_v1_entity_orders__order_id__filing_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateTransitionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     apply_ein_v1_entity_orders__order_id__ein_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateTransitionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_ein_v1_entity_orders__order_id__ein_issue_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1081,6 +1502,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StateTransitionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audit_trail_v1_entity_orders__order_id__audit_get: {
+        parameters: {
+            query?: {
+                /** @description Max events to return */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEventResponse"][];
                 };
             };
             /** @description Validation Error */

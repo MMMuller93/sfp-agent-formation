@@ -283,14 +283,14 @@
         }
       }
     },
-    "/v1/entity-orders/{order_id}/name-check": {
+    "/v1/entity-orders/{order_id}/intake": {
       "post": {
         "tags": [
           "entity-orders"
         ],
-        "summary": "Run name availability check",
-        "description": "Check whether the requested entity name is available in the target jurisdiction. Transitions intake_complete -> name_check_passed.",
-        "operationId": "name_check_v1_entity_orders__order_id__name_check_post",
+        "summary": "Complete intake",
+        "description": "Mark intake as complete. Transitions draft -> intake_complete. Call this after the order has been created and all member/agent details are finalized.",
+        "operationId": "complete_intake_v1_entity_orders__order_id__intake_post",
         "parameters": [
           {
             "name": "order_id",
@@ -310,6 +310,138 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/name-check": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Run name availability check",
+        "description": "Check whether the requested entity name is available in the target jurisdiction. If available, transitions to name_check_passed. If not, transitions to name_check_failed with suggestions.",
+        "operationId": "name_check_v1_entity_orders__order_id__name_check_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NameCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/payment": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Record payment",
+        "description": "Record a successful payment. Transitions name_check_passed -> payment_pending, or payment_pending -> payment_complete. In production, this is triggered by the Stripe webhook.",
+        "operationId": "record_payment_v1_entity_orders__order_id__payment_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/human-kernel": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Create human kernel session",
+        "description": "Create a secure session for the human owner to complete required steps (PII collection, KYC, document signing, attestation). Returns a URL the agent should relay to the human. Transitions order to human_kernel_required.",
+        "operationId": "create_kernel_session_v1_entity_orders__order_id__human_kernel_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateKernelResponse"
                 }
               }
             }
@@ -371,6 +503,54 @@
         }
       }
     },
+    "/v1/entity-orders/{order_id}/documents": {
+      "get": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "List order documents",
+        "description": "List all documents generated for an order.",
+        "operationId": "list_documents_v1_entity_orders__order_id__documents_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentSummary"
+                  },
+                  "title": "Response List Documents V1 Entity Orders  Order Id  Documents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/entity-orders/{order_id}/filing": {
       "post": {
         "tags": [
@@ -415,6 +595,50 @@
         }
       }
     },
+    "/v1/entity-orders/{order_id}/filing/confirm": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Confirm state filing",
+        "description": "Confirm that the state has approved the filing. Transitions state_filing_submitted -> state_confirmed.",
+        "operationId": "confirm_filing_v1_entity_orders__order_id__filing_confirm_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/entity-orders/{order_id}/ein": {
       "post": {
         "tags": [
@@ -423,6 +647,50 @@
         "summary": "Start EIN application",
         "description": "Initiate IRS EIN application (Form SS-4) for the formed entity. Transitions state_confirmed -> ein_pending.",
         "operationId": "apply_ein_v1_entity_orders__order_id__ein_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/ein/issue": {
+      "post": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Record EIN issuance",
+        "description": "Record that the IRS has issued the EIN. Transitions ein_pending -> ein_issued.",
+        "operationId": "issue_ein_v1_entity_orders__order_id__ein_issue_post",
         "parameters": [
           {
             "name": "order_id",
@@ -530,6 +798,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StateTransitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entity-orders/{order_id}/audit": {
+      "get": {
+        "tags": [
+          "entity-orders"
+        ],
+        "summary": "Get audit trail",
+        "description": "Get the audit trail for a specific order, newest first.",
+        "operationId": "get_audit_trail_v1_entity_orders__order_id__audit_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Max events to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Max events to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventResponse"
+                  },
+                  "title": "Response Get Audit Trail V1 Entity Orders  Order Id  Audit Get"
                 }
               }
             }
@@ -825,6 +1155,93 @@
           }
         ]
       },
+      "AuditEventResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "actor": {
+            "type": "string",
+            "title": "Actor"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "actor",
+          "action",
+          "created_at"
+        ],
+        "title": "AuditEventResponse",
+        "description": "An audit event for the trail endpoint."
+      },
+      "CreateKernelResponse": {
+        "properties": {
+          "kernel_url": {
+            "type": "string",
+            "title": "Kernel Url",
+            "description": "Secure URL for the human owner"
+          },
+          "token_prefix": {
+            "type": "string",
+            "title": "Token Prefix",
+            "description": "First 8 chars of the session token"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "suggested_message": {
+            "type": "string",
+            "title": "Suggested Message",
+            "description": "Message the agent can relay to the human owner"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kernel_url",
+          "token_prefix",
+          "expires_at",
+          "suggested_message"
+        ],
+        "title": "CreateKernelResponse",
+        "description": "Response after creating a human kernel session."
+      },
       "CreateOrderRequest": {
         "properties": {
           "jurisdiction": {
@@ -960,6 +1377,47 @@
             "url": "https://example.com/webhooks/sfp"
           }
         ]
+      },
+      "DocumentSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "doc_type": {
+            "type": "string",
+            "title": "Doc Type"
+          },
+          "template_version": {
+            "type": "string",
+            "title": "Template Version"
+          },
+          "file_hash": {
+            "type": "string",
+            "title": "File Hash"
+          },
+          "signing_status": {
+            "type": "string",
+            "title": "Signing Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "doc_type",
+          "template_version",
+          "file_hash",
+          "signing_status",
+          "created_at"
+        ],
+        "title": "DocumentSummary",
+        "description": "Lightweight document info for list endpoints."
       },
       "HTTPValidationError": {
         "properties": {
@@ -1097,6 +1555,57 @@
             "role": "member"
           }
         ]
+      },
+      "NameCheckResponse": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Suggestions"
+          },
+          "transition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StateTransitionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "jurisdiction",
+          "entity_name",
+          "message",
+          "method"
+        ],
+        "title": "NameCheckResponse",
+        "description": "Response from name availability check."
       },
       "OrderListResponse": {
         "properties": {

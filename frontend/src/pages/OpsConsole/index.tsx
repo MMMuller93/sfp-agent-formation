@@ -165,8 +165,7 @@ const STATE_ACTIONS: Partial<Record<OrderState, OrderAction>> = {
   state_filing_submitted: {
     label: "Confirm Filing",
     icon: CheckCircle2,
-    // Confirm filing = name-check step to advance state
-    handler: (id) => api.orders.nameCheck(id),
+    handler: (id) => api.orders.confirmFiling(id),
     confirmLabel: "Confirm state filing was accepted?",
   },
   state_confirmed: {
@@ -178,8 +177,7 @@ const STATE_ACTIONS: Partial<Record<OrderState, OrderAction>> = {
   ein_pending: {
     label: "Issue EIN",
     icon: CreditCard,
-    // Mark EIN as issued = generate bank pack triggers transition
-    handler: (id) => api.orders.generateBankPack(id),
+    handler: (id) => api.orders.issueEin(id),
     confirmLabel: "Mark EIN as issued?",
   },
   ein_issued: {

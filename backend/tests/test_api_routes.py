@@ -102,7 +102,16 @@ class TestOpenAPISpec:
         # Key entity order routes should be present
         assert "/v1/entity-orders" in paths
         assert "/v1/entity-orders/{order_id}" in paths
+        assert "/v1/entity-orders/{order_id}/intake" in paths
         assert "/v1/entity-orders/{order_id}/name-check" in paths
+        assert "/v1/entity-orders/{order_id}/human-kernel" in paths
+        assert "/v1/entity-orders/{order_id}/documents/generate" in paths
+        assert "/v1/entity-orders/{order_id}/documents" in paths
+        assert "/v1/entity-orders/{order_id}/filing" in paths
+        assert "/v1/entity-orders/{order_id}/filing/confirm" in paths
+        assert "/v1/entity-orders/{order_id}/ein" in paths
+        assert "/v1/entity-orders/{order_id}/ein/issue" in paths
+        assert "/v1/entity-orders/{order_id}/audit" in paths
 
     def test_webhook_routes_in_spec(self):
         from fastapi.testclient import TestClient
